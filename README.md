@@ -30,6 +30,36 @@ from a repository into a CI log. A test fails the build if any raw value reaches
 plug-in later), databases or live systems (it scans repositories only), any compliance
 score or verdict.
 
+## Precision and recall
+
+Measured on a synthetic, labelled corpus that the benchmark generates (no real identifier
+is stored anywhere). Numbers are k/N with the misses named, so they can be checked and so
+nobody has to write "detects all Aadhaar numbers".
+
+**Precision and recall on the synthetic benchmark (2026-11-06, commit 82ab268).** `python -m dpdp_scan.bench`, seed 20261106, 200 per class.
+
+| Detector | Recall (found / positives) | Precision (true / fired) | Misses | False hits |
+|---|---:|---:|---|---|
+| `email` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_aadhaar` | 200/200 (100%) | 200/236 (85%) | none | order_id_prefixed 21, random_12_digits 15 |
+| `in_driving_licence` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_gstin` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_ifsc` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_mobile` | 200/200 (100%) | 200/299 (67%) | none | random_10_digits 99 |
+| `in_pan` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_passport` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_upi` | 200/200 (100%) | 200/200 (100%) | none | none |
+| `in_voter_epic` | 200/200 (100%) | 200/200 (100%) | none | none |
+
+Recall counts a positive as found at any confidence. Precision counts every firing on a
+negative as a false hit, including the ones the detector itself marks LOW. Two floors are
+structural: about one random 12-digit number in ten passes the Verhoeff checksum, and four
+random 10-digit numbers in nine start with 6 to 9 and so look like a mobile number. Both are
+reported at reduced confidence (MEDIUM with an order-id context, LOW for a bare ten digits),
+and field names are what lift real values above them. The corpus does not yet contain
+real-world text with Indian names, addresses or Hinglish, so these numbers are an upper
+bound on synthetic data, not a claim about your repository.
+
 ## How it compares
 
 Checked on 5 November 2026 against each project's repository.

@@ -128,9 +128,9 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 - **Done when:** a real workflow run on GitHub shows findings in the Security tab. ✅ 2026-11-06: run 42216142255 uploaded SARIF from commit 86c6808; the Security tab lists 88 dpdp-scan alerts across 11 rule ids (value detectors, both age-gate rules and pii-in-logs-js), all from the synthetic test fixtures. This also closes DS-6's upload half.
 
 ### DS-9 · Benchmark · ~1 d
-- [ ] A labelled fixture set (synthetic only, with no real identifiers): positives and hard negatives per detector
-- [ ] `python -m dpdp_scan.bench` reports precision and recall per detector; the table goes in the README with the misses named
-- **Done when:** the README states k/N per detector with the date and commit.
+- [x] A labelled fixture set (synthetic only, with no real identifiers): positives and hard negatives per detector *(`bench/__init__.py` generates it from a seed: 200 positives per detector in five code contexts, 200 look-alike negatives per detector, 2,000 noise samples)*
+- [x] `python -m dpdp_scan.bench` reports precision and recall per detector; the table goes in the README with the misses named *(README "Precision and recall"; `tests/test_bench.py` holds floors that fail CI if a detector regresses)*
+- **Done when:** the README states k/N per detector with the date and commit. ✅ 2026-11-06 (commit 82ab268 numbers): recall 200/200 for all ten detectors; precision 100% for eight, 85% for Aadhaar (the Verhoeff floor plus ORD- prefixed ids) and 67% for mobile (shape only). The README says the corpus is synthetic and the numbers are an upper bound.
 
 ### DS-10 · Launch · ~1 d
 **Depends on:** DS-8, DS-9, and the Gap Identifier being live
