@@ -99,10 +99,10 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 
 ### DS-6 · Outputs · ~1 d
 **Depends on:** DS-2 → DS-5
-- [ ] SARIF: port `to_sarif_uri` and the anchoring relative to `GITHUB_WORKSPACE`; rule metadata carries the Act section and a short remediation
-- [ ] JSON inventory: categories, locations and counts, structured to seed a data map/RoPA later
-- [ ] Markdown summary grouped by category, with the obligation each one touches
-- **Done when:** SARIF validates against the 2.1.0 schema and uploads cleanly to GitHub code scanning on a test repo.
+- [x] SARIF: port `to_sarif_uri` and the anchoring relative to `GITHUB_WORKSPACE`; rule metadata carries the Act section and a short remediation *(`output/sarif.py`; `%SRCROOT%` base id with `GITHUB_WORKSPACE` or the scanned root in `originalUriBaseIds`; rule descriptors from `catalogue.py` with help text = description + what to do + provisions + not-legal-advice; stable `partialFingerprints`; Semgrep status as a tool notification)*
+- [x] JSON inventory: categories, locations and counts, structured to seed a data map/RoPA later *(`output/inventory.py`: `summary`, `categories` with provisions, `data_map` of declared fields grouped by container, `values`, `rules`)*
+- [x] Markdown summary grouped by category, with the obligation each one touches *(`output/markdown.py`)*
+- **Done when:** SARIF validates against the 2.1.0 schema and uploads cleanly to GitHub code scanning on a test repo. ✅ schema half 2026-11-06 (`tests/data/sarif-2.1.0.json` vendored from schemastore; `jsonschema` dev dependency). The upload half is DS-8's first workflow run.
 
 ### DS-7 · Config, baseline, exit codes · ~0.5 d
 - [ ] `.dpdp-scan.yml` (ignore paths, allowlist values by hash rather than plaintext, detector toggles)
