@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from dpdp_scan.config import AllowList
+from dpdp_scan.allow import AllowList
 from dpdp_scan.detectors.allowlist import is_allowlisted
 from dpdp_scan.detectors.base import Detector, Step
 from dpdp_scan.detectors.india import BY_ID, DETECTORS

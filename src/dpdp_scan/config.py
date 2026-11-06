@@ -25,40 +25,34 @@ Unknown keys are errors: a typo must not silently switch a check off.
 
 from __future__ import annotations
 
-import hashlib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from dpdp_scan.detectors.base import Step
+from dpdp_scan.allow import AllowList, value_hash
+
+__all__ = ["AllowList", "Config", "ConfigError", "load_config", "parse_config", "value_hash"]
+
+if TYPE_CHECKING:
+    from dpdp_scan.detectors.base import Step
 
 CONFIG_FILENAME = ".dpdp-scan.yml"
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
-_STEPS = {"none": None, "low": Step.LOW, "medium": Step.MEDIUM, "high": Step.HIGH}
+_FAIL_ON_VALUES = ("none", "low", "medium", "high")
+
+
+def _step_for(name: str) -> Step | None:
+    # Imported here, not at module level: dpdp_scan.detectors imports this module.
+    from dpdp_scan.detectors.base import Step
+
+    return {"none": None, "low": Step.LOW, "medium": Step.MEDIUM, "high": Step.HIGH}[name]
 
 
 class ConfigError(ValueError):
     pass
-
-
-@dataclass(frozen=True, slots=True)
-class AllowList:
-    #: Email and UPI findings whose domain or handle is one of these are dropped.
-    domains: tuple[str, ...] = ()
-    #: sha256 hex digests of compact values that are known not to be anyone's.
-    value_hashes: frozenset[str] = frozenset()
-
-    def allows_value(self, compact: str) -> bool:
-        return bool(self.value_hashes) and value_hash(compact) in self.value_hashes
-
-    def allows_domain(self, compact: str) -> bool:
-        if "@" not in compact or not self.domains:
-            return False
-        domain = compact.rsplit("@", 1)[1].lower()
-        return any(domain == d or domain.endswith("." + d) for d in self.domains)
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,11 +71,6 @@ class Config:
         if detector_id.startswith("schema_") and "schema" in self.disabled:
             return False
         return not (detector_id.startswith("rule:") and "rules" in self.disabled)
-
-
-def value_hash(compact: str) -> str:
-    """sha256 of the compact (separator-free, upper-cased) value."""
-    return hashlib.sha256(compact.encode("utf-8")).hexdigest()
 
 
 def _expect(cond: bool, msg: str) -> None:
@@ -137,7 +126,7 @@ def parse_config(data: Any, source: str = "") -> Config:
 
     fail_on_raw = data.get("fail_on", "none")
     _expect(
-        isinstance(fail_on_raw, str) and fail_on_raw in _STEPS,
+        isinstance(fail_on_raw, str) and fail_on_raw in _FAIL_ON_VALUES,
         "fail_on must be none, low, medium or high",
     )
 
@@ -148,7 +137,7 @@ def parse_config(data: Any, source: str = "") -> Config:
         ignore_paths=ignore_paths,
         disabled=disabled,
         allow=AllowList(domains=domains, value_hashes=frozenset(h.lower() for h in hashes)),
-        fail_on=_STEPS[fail_on_raw],
+        fail_on=_step_for(fail_on_raw),
         baseline=baseline,
         source=source,
     )

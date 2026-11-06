@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -210,6 +212,22 @@ def test_write_then_use_baseline_via_cli(
         main([str(repo), "--no-git", "--no-rules", "--baseline", str(tmp_path / "missing.json")])
         == 2
     )
+
+
+def test_cli_imports_cleanly_in_a_fresh_interpreter() -> None:
+    # Guards against import cycles that pytest's own import order can hide.
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from dpdp_scan.cli import main; raise SystemExit(main(['--version']))",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "dpdp-scan" in proc.stdout
 
 
 def test_hash_value_flag(capsys: pytest.CaptureFixture[str]) -> None:
