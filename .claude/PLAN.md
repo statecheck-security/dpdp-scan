@@ -134,12 +134,20 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 
 ### DS-10 · Launch · ~1 d
 **Depends on:** DS-8, DS-9, and the Gap Identifier being live
-- [ ] Release v0.1.0 to PyPI and tag the Action
-- [ ] A scs landing section and blog post (working title "Find Aadhaar in your codebase before the Board does"), plus a statecheck-docs article. Everything passes the legal check.
-- [ ] Link from the Gap Identifier report: the "Security safeguards" and "Retention and erasure" gaps recommend running dpdp-scan
-- [ ] A LinkedIn post and a newsletter issue
+- [~] Release v0.1.0 to PyPI and tag the Action *(2026-11-06: `v0.1.0` tagged; `release.yml` builds, verifies the wheel and creates the GitHub release with CHANGELOG notes. PyPI publishes through trusted publishing once the owner registers the workflow on pypi.org and sets the `PYPI_TRUSTED_PUBLISHING` repository variable.)*
+- [~] A scs landing section and blog post (working title "Find Aadhaar in your codebase before the Board does"), plus a statecheck-docs article. Everything passes the legal check. *(2026-11-06: hub paragraph on scs branch `feature/dpdp-scan-launch` (tests 567, legal check clean); article draft in statecheck-docs `output/dpdp-scan-launch/article.md`, status draft, Sanity import is the owner's)*
+- [x] Link from the Gap Identifier report: the "Security safeguards" and "Retention and erasure" gaps recommend running dpdp-scan *(same scs branch; BANK_VERSION 2026-11-06-draft7)*
+- [~] A LinkedIn post and a newsletter issue *(drafted in statecheck-docs `output/dpdp-scan-launch/social.md`; posting is the owner's)*
 
 ---
+
+### DS-11 · DVDPA demo app (added 2026-11-06)
+- [x] A deliberately leaky KYC app (Flask, Express, SQL, Prisma, OpenAPI, fixtures) with synthetic identifiers only; 66 findings in 13 files; a plan `name` column and a gated handler stay quiet. Built and committed at `H:\github\dvdpa`.
+- [ ] Public repo `statecheck-security/dvdpa`: the session was not permitted to create a public repository; the owner runs `gh repo create statecheck-security/dvdpa --public --source=. --push` from that folder.
+
+### DS-12 · CFPs (added 2026-11-06)
+- [x] Abstracts for nullcon, VulnCon, BSides and Black Hat Asia Arsenal drafted in statecheck-docs `output/outreach/dpdp-scan-cfps.md`.
+- [ ] Submissions: the owner's.
 
 ## Estimate and sequence
 
