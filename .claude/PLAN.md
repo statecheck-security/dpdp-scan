@@ -61,10 +61,10 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 - **Done when:** CI is green on an empty package. ✅ 2026-11-06
 
 ### DS-2 · Core: finding model, walker, masking · ~1 d
-- [ ] `Finding` (detector id, category, path, line/col, masked evidence, confidence, Act-section pointer) and `Inventory`
-- [ ] File walker: honours `.gitignore`; skips binaries, vendored code (`node_modules`, `dist`, lockfiles) and files over a size cap
-- [ ] A masking utility with its own tests. No code path may emit an unmasked value.
-- **Done when:** a fixture repo walks deterministically and a test proves no raw value reaches any output.
+- [x] `Finding` (detector id, category, path, line/col, masked evidence, confidence, Act-section pointer) and `Inventory` *(`model.py`; a Finding refuses unmasked evidence in `__post_init__`)*
+- [x] File walker: honours `.gitignore`; skips binaries, vendored code (`node_modules`, `dist`, lockfiles) and files over a size cap *(`walker.py`; `git ls-files --cached --others --exclude-standard` for exact ignore semantics, os.walk fallback)*
+- [x] A masking utility with its own tests. No code path may emit an unmasked value. *(`masking.py`: last 4 visible, hidden run capped at 8, values of 6 or fewer fully masked)*
+- **Done when:** a fixture repo walks deterministically and a test proves no raw value reaches any output. ✅ 2026-11-06, 50 tests
 
 ### DS-3 · Validated value detectors · ~2 d
 - [ ] Verhoeff and GSTIN checksum implementations, tested against published examples
