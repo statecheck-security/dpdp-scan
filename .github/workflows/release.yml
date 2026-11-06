@@ -1,0 +1,79 @@
+# Release: on a v* tag, build the sdist and wheel, attach them to a GitHub release
+# with the matching CHANGELOG section as notes, and publish to PyPI through trusted
+# publishing when the repository variable PYPI_TRUSTED_PUBLISHING is "true" (set
+# it after registering this workflow as a trusted publisher on pypi.org). Until
+# then the PyPI job is skipped, not failed.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build
+      - name: The tag matches the package version
+        run: |
+          ver=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          test "v$ver" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} does not match version $ver"; exit 1; }
+      - name: The wheel installs and runs
+        run: |
+          python -m pip install dist/*.whl
+          dpdp-scan --version
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: dist
+          path: dist/
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist/
+      - name: Release notes from CHANGELOG.md
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          awk -v tag="$tag" '
+            $0 ~ "^## \\[" tag "\\]" { p = 1; next }
+            /^## \[/ { p = 0 }
+            p' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+          printf '\n---\nNot legal advice. dpdp-scan reports where personal data appears and which obligation it touches; it gives no compliance verdict.\n' >> notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --title "dpdp-scan ${GITHUB_REF_NAME}" \
+            --notes-file notes.md \
+            --verify-tag
+
+  pypi:
+    needs: build
+    if: ${{ vars.PYPI_TRUSTED_PUBLISHING == 'true' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0

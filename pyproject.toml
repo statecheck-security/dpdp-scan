@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dpdp-scan"
-version = "0.0.1"
+version = "0.1.0"
 description = "Finds Indian personal data (Aadhaar, PAN, GSTIN, UPI, IFSC, mobile) in code, schemas, fixtures and logs, and points each finding at the DPDP Act obligation it touches."
 readme = "README.md"
 requires-python = ">=3.12"

@@ -4,15 +4,17 @@ Finds Indian personal data in code, schemas, fixtures and logs, and points each 
 at the obligation under India's Digital Personal Data Protection Act, 2023 and the DPDP
 Rules, 2025 that it touches. A CLI and a GitHub Action, built to run in CI.
 
-**Status:** v0.0.1 holds the name. The scanner is being built; the plan is in
-[`.claude/PLAN.md`](.claude/PLAN.md). Target for a usable v0.1: early December 2026.
+**Status:** v0.1.0 (6 November 2026). Value detectors, schema classifier, Semgrep rule
+pack, SARIF/JSON/Markdown outputs, config, baseline, a GitHub Action and a Docker image.
+See [CHANGELOG.md](CHANGELOG.md); the build plan is in [`.claude/PLAN.md`](.claude/PLAN.md).
+Try it on [DVDPA](https://github.com/statecheck-security/dvdpa), a deliberately leaky demo app.
 
 > **Not legal advice.** dpdp-scan reports where personal data appears and which
 > obligation it engages. It gives no compliance verdict. Whether a finding matters
 > depends on your processing, your contracts and how the Data Protection Board reads
 > the Rules.
 
-## What it will do (v0.1)
+## What it does
 
 | Part | What | Why it matters |
 |---|---|---|
@@ -82,11 +84,31 @@ CI experience it copies. The rest are the field.
 ## Install
 
 ```bash
-pipx install dpdp-scan   # or: pip install dpdp-scan
-dpdp-scan --version
+pipx install dpdp-scan semgrep   # or: pip install dpdp-scan semgrep
+dpdp-scan .                      # text summary
+dpdp-scan . --format sarif --sarif results.sarif --fail-on high
 ```
 
-The v0.0.1 CLI exits with code 2 and reads nothing. It exists so the name is taken.
+Semgrep is optional: without it the value detectors and schema classifier still run and
+the rule pack is skipped with a note. Until the PyPI release lands, install from GitHub:
+`pip install git+https://github.com/statecheck-security/dpdp-scan@v0.1.0`.
+
+**GitHub Action.** Findings go to the Security tab as code scanning alerts:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v5
+  - uses: statecheck-security/dpdp-scan@v0.1.0
+    with:
+      fail-on: high            # none | low | medium | high
+      # baseline: .dpdp-scan-baseline.json
+```
+
+**Docker.** `docker build -t dpdp-scan .` then
+`docker run --rm -v "$PWD:/repo:ro" dpdp-scan /repo --format sarif > results.sarif`.
 
 ## Configuration
 
