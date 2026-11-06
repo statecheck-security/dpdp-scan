@@ -63,3 +63,27 @@ function unrelated(req, res) {
   const city = req.body.city;
   return res.json({ city });
 }
+
+// Arrow handlers with two parameters, gated: the rule must stay quiet.
+app.post("/signup-gated", (req, res) => {
+  const dob = req.body.dateOfBirth;
+  const age = yearsSince(dob);
+  // ok: dob-without-age-gate-js
+  if (age < 18) {
+    return res.status(403).end();
+  }
+  return res.json({ dob });
+});
+
+app.post("/signup-verified", (req, res) => {
+  // ok: dob-without-age-gate-js
+  const dob = req.body.birthDate;
+  verifyAge(dob);
+  return res.json({ dob });
+});
+
+app.post("/signup-open", (req, res) => {
+  // ruleid: dob-without-age-gate-js
+  const dob = req.body.dateOfBirth;
+  return res.json({ dob });
+});
