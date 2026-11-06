@@ -89,13 +89,13 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 - **Done when:** run on bytesnapp's Prisma schema and scs's Sanity-backed APIs, it produces a sensible inventory. Those are our own repos; don't use client projects. ✅ 2026-11-06. bytesnapp: exactly `User.walletAddress`, `User.username`, `User.avatarUrl` (all LOW) from the Prisma schema and the same three from its SQL migration; `Game.name`, `BlockchainEvent.eventName`, `contractAddr`, hashes and timestamps correctly absent. scs: 0 findings at HIGH, 88 at LOW/MEDIUM, all the company's own role mailboxes (`privacy@`, `legal@`, `contact@`), which the DS-7 config allowlist should accept by domain. scs's Sanity schemas are TypeScript, which the v0.1 parsers do not read; ORM/TS models are v0.2 as planned.
 
 ### DS-5 · Semgrep rule pack · ~2 d
-- [ ] Port paranoid's Semgrep runner: the timeouts, process-tree kill, argv batching and degrade-if-missing behaviour
-- [ ] Rules for JS/TS and Python first:
+- [x] Port paranoid's Semgrep runner: the timeouts, process-tree kill, argv batching and degrade-if-missing behaviour *(`semgrep_runner.py`, synchronous; `DPDP_SCAN_SEMGREP` overrides PATH; per-file 30 s, run 300 s; taskkill /T on Windows, killpg elsewhere; targets batched under 28k argv chars; status ok/missing/skipped/timeout/error)*
+- [x] Rules for JS/TS and Python first *(`rules/dpdpa.yml`, six rules; metadata carries category, confidence and the Act/Rules refs; matched code reaches a finding only as a sanitised locator)*:
   - personal data in log calls;
   - personal data passed to analytics/telemetry SDKs;
   - DOB/age collection with no age-gate pattern nearby (a low-confidence S.9 signal)
-- [ ] Rule tests (Semgrep `--test` fixtures)
-- **Done when:** the rules fire on positive fixtures and stay quiet on negative ones; there are no crashes when Semgrep is absent.
+- [x] Rule tests (Semgrep `--test` fixtures) *(`tests/semgrep/dpdpa.{py,js}`; CI runs `--validate` and `--test` on Linux; Windows proves the degrade path)*
+- **Done when:** the rules fire on positive fixtures and stay quiet on negative ones; there are no crashes when Semgrep is absent. ✅ 2026-11-06. Two rule-writing lessons recorded for the Semgrep registry submission: a `metavariable-regex` on a metavariable that one `pattern-either` branch does not bind fails that branch silently (nest the regex with the patterns that bind it), and `metavariable-pattern` with `pattern-not: '"..."'` is how to skip plain string literals without losing f-strings.
 
 ### DS-6 · Outputs · ~1 d
 **Depends on:** DS-2 → DS-5

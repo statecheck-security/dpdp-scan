@@ -24,6 +24,14 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
+      # Semgrep on Linux only: the Windows job proves the scan degrades
+      # cleanly when it is absent, and the Semgrep tests skip themselves.
+      - if: runner.os == 'Linux'
+        run: pip install semgrep
+      - if: runner.os == 'Linux'
+        run: |
+          semgrep --validate --metrics=off --config src/dpdp_scan/rules/dpdpa.yml
+          semgrep --test --metrics=off --config src/dpdp_scan/rules tests/semgrep
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest

@@ -1,0 +1,261 @@
+# dpdp-scan rule pack. Read these: they are the whole point.
+#
+# Every rule's metadata carries the inventory category, a confidence and the
+# DPDP Act / Rules references the finding engages. The messages are pointers
+# for engineers, not legal advice. Fixtures: tests/semgrep/dpdpa.{py,js}.
+#
+# Personal-data field names, shared by the rules below. Matched against the
+# text of the argument (so `user.aadhaar`, `aadhaar_no`, f"{u.phone}" all hit).
+# Deliberately a shorter list than the schema lexicon: these are the names
+# that are personal data wherever they appear, not the ambiguous ones.
+
+rules:
+  # ---------------------------------------------------------------- logs ---
+  - id: pii-in-logs-python
+    message: >
+      Personal data is passed to a log call. Logs are copied, shipped to
+      third parties and kept for years; writing identifiers into them works
+      against the S.8(5) duty to protect personal data and Rule 6(1)(a),
+      which lists masking and obfuscation among security measures. Log an
+      opaque id, or mask the value before logging.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: identity
+      confidence: medium
+      dpdpa: ["S.8(5)", "Rule 6(1)(a)"]
+      label: personal data in a log call
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern-either:
+                  - pattern: logging.$M(..., $X, ...)
+                  - pattern: $LOGGER.$M(..., $X, ...)
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(debug|info|warning|warn|error|critical|exception|log|fatal|trace)$
+          - pattern: print(..., $X, ...)
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i).*(aadhaar|aadhar|adhaar|pan_?(no|num|number|card)|passport|voter|epic|dob|date_?of_?birth|birth_?date|email|phone|mobile|mob_?no|msisdn|whatsapp|address|pincode|ifsc|upi|vpa|gstin|account_?(no|num|number)|card_?(no|num|number)|cvv|salary|otp).*
+      # A plain string literal ("email sent") names the data without carrying
+      # it. f-strings and expressions still match.
+      - metavariable-pattern:
+          metavariable: $X
+          patterns:
+            - pattern-not: '"..."'
+
+  - id: pii-in-logs-js
+    message: >
+      Personal data is passed to a log call. Logs are copied, shipped to
+      third parties and kept for years; writing identifiers into them works
+      against the S.8(5) duty to protect personal data and Rule 6(1)(a),
+      which lists masking and obfuscation among security measures. Log an
+      opaque id, or mask the value before logging.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      category: identity
+      confidence: medium
+      dpdpa: ["S.8(5)", "Rule 6(1)(a)"]
+      label: personal data in a log call
+    patterns:
+      - pattern-either:
+          - pattern: console.$M(..., $X, ...)
+          - pattern: $LOGGER.$M(..., $X, ...)
+      - metavariable-regex:
+          metavariable: $M
+          regex: ^(log|info|warn|warning|error|debug|trace|fatal|verbose|silly)$
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i).*(aadhaar|aadhar|adhaar|pan_?(no|num|number|card)|panNumber|panNo|passport|voter|epic|dob|date_?of_?birth|dateOfBirth|birth_?date|email|phone|mobile|mob_?no|mobileNo|msisdn|whatsapp|address|pincode|pinCode|ifsc|upi|vpa|gstin|account_?(no|num|number)|accountNumber|card_?(no|num|number)|cardNumber|cvv|salary|otp).*
+      - metavariable-pattern:
+          metavariable: $X
+          patterns:
+            - pattern-not: '"..."'
+
+  # ----------------------------------------------------------- analytics ---
+  - id: pii-to-analytics-python
+    message: >
+      Personal data is sent to an analytics or telemetry SDK. The vendor is a
+      Data Processor (S.2(k)) acting for you (S.8(2)), and sharing identifiers
+      with it needs a purpose the Data Principal was told about (S.5, S.6).
+      Send a hashed or pseudonymous id instead.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: identity
+      confidence: medium
+      dpdpa: ["S.5", "S.6", "S.8(2)"]
+      label: personal data sent to an analytics SDK
+    patterns:
+      - pattern-either:
+          - pattern: $SDK.track(..., $X, ...)
+          - pattern: $SDK.identify(..., $X, ...)
+          - pattern: $SDK.capture(..., $X, ...)
+          - pattern: $SDK.alias(..., $X, ...)
+          - pattern: $SDK.people.set(..., $X, ...)
+          - pattern: $SDK.set_user(..., $X, ...)
+          - pattern: $SDK.push_event(..., $X, ...)
+      - metavariable-regex:
+          metavariable: $SDK
+          regex: (?i)^(analytics|segment|mixpanel|mp|posthog|amplitude|ga|gtag|firebase|sentry|sentry_sdk|rudder|rudderstack|rudder_analytics|clevertap|moengage|webengage|heap|hotjar|braze|appsflyer|tracker|telemetry)$
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i).*(aadhaar|aadhar|adhaar|pan_?(no|num|number|card)|passport|voter|epic|dob|date_?of_?birth|birth_?date|email|phone|mobile|mob_?no|msisdn|whatsapp|address|pincode|ifsc|upi|vpa|gstin|account_?(no|num|number)|card_?(no|num|number)|cvv|salary).*
+
+  - id: pii-to-analytics-js
+    message: >
+      Personal data is sent to an analytics or telemetry SDK. The vendor is a
+      Data Processor (S.2(k)) acting for you (S.8(2)), and sharing identifiers
+      with it needs a purpose the Data Principal was told about (S.5, S.6).
+      Send a hashed or pseudonymous id instead.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      category: identity
+      confidence: medium
+      dpdpa: ["S.5", "S.6", "S.8(2)"]
+      label: personal data sent to an analytics SDK
+    patterns:
+      - pattern-either:
+          # SDK object methods: the receiver must be a known analytics SDK.
+          - patterns:
+              - pattern-either:
+                  - pattern: $SDK.track(..., $X, ...)
+                  - pattern: $SDK.identify(..., $X, ...)
+                  - pattern: $SDK.capture(..., $X, ...)
+                  - pattern: $SDK.alias(..., $X, ...)
+                  - pattern: $SDK.people.set(..., $X, ...)
+                  - pattern: $SDK.setUser(..., $X, ...)
+                  - pattern: $SDK.setUserProperties(..., $X, ...)
+                  - pattern: $SDK.logEvent(..., $X, ...)
+              - metavariable-regex:
+                  metavariable: $SDK
+                  regex: (?i)^(analytics|segment|mixpanel|posthog|amplitude|ga|ReactGA|gtag|firebase|Sentry|rudderanalytics|rudderstack|clevertap|moengage|webengage|heap|hotjar|braze|appsflyer|tracker|telemetry|window\.analytics|window\.mixpanel|window\.posthog)$
+          # Global tag functions and the GTM data layer.
+          - pattern: gtag(..., $X, ...)
+          - pattern: fbq(..., $X, ...)
+          - pattern: dataLayer.push(..., $X, ...)
+          - pattern: window.dataLayer.push(..., $X, ...)
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i).*(aadhaar|aadhar|adhaar|pan_?(no|num|number|card)|panNumber|panNo|passport|voter|epic|dob|date_?of_?birth|dateOfBirth|birth_?date|email|phone|mobile|mob_?no|mobileNo|msisdn|whatsapp|address|pincode|pinCode|ifsc|upi|vpa|gstin|account_?(no|num|number)|accountNumber|card_?(no|num|number)|cardNumber|cvv|salary).*
+
+  # ------------------------------------------------------------ children ---
+  - id: dob-without-age-gate-python
+    message: >
+      A date of birth is read from request input, and no age check was found
+      in the same function. If any users may be under 18, S.9 requires
+      verifiable parental consent before processing a child's data (Rule 10).
+      This is a signal to check, not a defect: add the age gate, or confirm
+      the service is not offered to children.
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: age_dob
+      confidence: low
+      dpdpa: ["S.9", "Rule 10"]
+      label: date of birth collected without an age gate nearby
+    patterns:
+      - pattern-either:
+          - pattern: $REQ.$SRC[$KEY]
+          - pattern: $REQ.$SRC.get($KEY, ...)
+          - pattern: $REQ.$SRC.getlist($KEY, ...)
+      - metavariable-regex:
+          metavariable: $SRC
+          regex: ^(data|json|form|POST|GET|args|params|query|body|values|cleaned_data|validated_data)$
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i)^["'](dob|date_?of_?birth|birth_?date|birthday)["']$
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            if $AGE < 18:
+              ...
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            if $AGE >= 18:
+              ...
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            $VERIFY(..., age=..., ...)
+            ...
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            is_minor(...)
+            ...
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            verify_age(...)
+            ...
+      - pattern-not-inside: |
+          def $F(...):
+            ...
+            parental_consent(...)
+            ...
+
+  - id: dob-without-age-gate-js
+    message: >
+      A date of birth is read from request input, and no age check was found
+      in the same function. If any users may be under 18, S.9 requires
+      verifiable parental consent before processing a child's data (Rule 10).
+      This is a signal to check, not a defect: add the age gate, or confirm
+      the service is not offered to children.
+    severity: INFO
+    languages: [javascript, typescript]
+    metadata:
+      category: age_dob
+      confidence: low
+      dpdpa: ["S.9", "Rule 10"]
+      label: date of birth collected without an age gate nearby
+    patterns:
+      - pattern-either:
+          - pattern: $REQ.$SRC.$KEY
+          - pattern: $REQ.$SRC[$KEY]
+      - metavariable-regex:
+          metavariable: $SRC
+          regex: ^(body|query|params|formData|form|data)$
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i)^["']?(dob|date_?of_?birth|dateOfBirth|birth_?date|birthDate|birthday)["']?$
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            if ($AGE < 18) { ... }
+            ...
+          }
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            if ($AGE >= 18) { ... }
+            ...
+          }
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            isMinor(...)
+            ...
+          }
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            verifyAge(...)
+            ...
+          }
+      - pattern-not-inside: |
+          ($ARGS) => {
+            ...
+            if ($AGE < 18) { ... }
+            ...
+          }
+      - pattern-not-inside: |
+          ($ARGS) => {
+            ...
+            verifyAge(...)
+            ...
+          }

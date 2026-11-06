@@ -49,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="do not ask git for the file list; walk the tree and ignore .gitignore",
     )
+    parser.add_argument(
+        "--no-rules",
+        action="store_true",
+        help="skip the Semgrep rule pack (logs, analytics SDKs, age gates)",
+    )
     return parser
 
 
@@ -57,11 +62,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     min_step = {"low": Step.LOW, "medium": Step.MEDIUM, "high": Step.HIGH}[args.min_confidence]
     try:
         result = scan_path(
-            args.path, walk_options=WalkOptions(use_git=not args.no_git), min_step=min_step
+            args.path,
+            walk_options=WalkOptions(use_git=not args.no_git),
+            min_step=min_step,
+            rules=not args.no_rules,
         )
     except NotADirectoryError as exc:
         print(f"dpdp-scan: not a directory: {exc}", file=sys.stderr)
         return 2
+
+    sg = result.semgrep
+    if sg is not None and sg.status != "ok":
+        notes = {
+            "missing": "Semgrep is not installed; the rule pack was skipped "
+            "(pip install semgrep, or set DPDP_SCAN_SEMGREP).",
+            "skipped": "no Python or JavaScript/TypeScript files; the rule pack had nothing to do.",
+            "timeout": "Semgrep ran out of time; rule findings are incomplete.",
+            "error": "Semgrep reported an error; rule findings may be incomplete.",
+        }
+        print(f"dpdp-scan: {notes[sg.status]}", file=sys.stderr)
+        for err in sg.errors[:5]:
+            print(f"  {err}", file=sys.stderr)
 
     inv = result.inventory
     n = len(inv.findings)

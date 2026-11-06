@@ -51,6 +51,9 @@ Issues = "https://github.com/statecheck-security/dpdp-scan/issues"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+dpdp_scan = ["rules/*.yml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
@@ -58,7 +61,7 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = [".venv"]
+extend-exclude = [".venv", "tests/semgrep"] # Semgrep fixtures are deliberately not valid programs
 
 [tool.ruff.lint]
 # Bugs, unused code, import order, bugbear and security checks. No pure-style rules.
