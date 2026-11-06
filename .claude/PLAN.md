@@ -143,7 +143,7 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 
 ### DS-11 · DVDPA demo app (added 2026-11-06)
 - [x] A deliberately leaky KYC app (Flask, Express, SQL, Prisma, OpenAPI, fixtures) with synthetic identifiers only; 66 findings in 13 files; a plan `name` column and a gated handler stay quiet. Built and committed at `H:\github\dvdpa`.
-- [ ] Public repo `statecheck-security/dvdpa`: the session was not permitted to create a public repository; the owner runs `gh repo create statecheck-security/dvdpa --public --source=. --push` from that folder.
+- [x] Public repo `statecheck-security/dvdpa`, created and pushed 2026-11-06 with the owner's approval; its workflow runs the Action at v0.1.0.
 
 ### DS-12 · CFPs (added 2026-11-06)
 - [x] Abstracts for nullcon, VulnCon, BSides and Black Hat Asia Arsenal drafted in statecheck-docs `output/outreach/dpdp-scan-cfps.md`.
