@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpdp-scan"
+version = "0.0.1"
+description = "Finds Indian personal data (Aadhaar, PAN, GSTIN, UPI, IFSC, mobile) in code, schemas, fixtures and logs, and points each finding at the DPDP Act obligation it touches."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "StateCheck Security" }]
+keywords = [
+  "dpdp-act",
+  "dpdpa",
+  "india",
+  "privacy",
+  "pii",
+  "aadhaar",
+  "pan",
+  "gstin",
+  "sarif",
+  "semgrep",
+  "devsecops",
+  "data-discovery",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.14"]
+
+[project.scripts]
+dpdp-scan = "dpdp_scan.cli:main"
+
+[project.urls]
+Homepage = "https://statechecksecurity.com"
+Repository = "https://github.com/statecheck-security/dpdp-scan"
+Issues = "https://github.com/statecheck-security/dpdp-scan/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+# Bugs, unused code, import order, bugbear and security checks. No pure-style rules.
+select = ["E", "F", "W", "I", "B", "S", "UP"]
+ignore = ["S101"] # assert is how pytest tests are written
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"] # test values are fixtures, not secrets

@@ -1,0 +1,20 @@
+dpdp-scan
+Copyright 2026 StateCheck Security
+
+This product includes software developed by StateCheck Security
+(https://statechecksecurity.com).
+
+Portions of this software are ported from Paranoid
+(https://github.com/theAstiv/paranoid), Copyright 2025-2026 Astitva,
+licensed under the Apache License, Version 2.0: the Semgrep subprocess
+runner and the SARIF 2.1.0 exporter.
+
+The Semgrep rules and the personal-data field lexicon are developed
+alongside the DPDPA Engineering Kit
+(https://github.com/statecheck-security/dpdpa-engineering-kit),
+Copyright 2026 StateCheck Security, Apache License, Version 2.0.
+
+The legal references in this software (sections of the Digital Personal
+Data Protection Act, 2023 and rules of the Digital Personal Data
+Protection Rules, 2025) are pointers for engineers. They are not legal
+advice.

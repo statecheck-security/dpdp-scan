@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Scan outputs (never commit a result; it may describe real repositories)
+*.sarif
+dpdp-scan-report.*
+.dpdp-scan-baseline.json
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local Claude settings (the plan in .claude/PLAN.md is tracked)
+.claude/settings.local.json
+.claude/worktrees/
