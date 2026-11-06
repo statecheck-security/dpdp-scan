@@ -91,7 +91,7 @@ dpdp-scan . --format sarif --sarif results.sarif --fail-on high
 
 Semgrep is optional: without it the value detectors and schema classifier still run and
 the rule pack is skipped with a note. Until the PyPI release lands, install from GitHub:
-`pip install git+https://github.com/statecheck-security/dpdp-scan@v0.1.0`.
+`pip install git+https://github.com/statecheck-security/dpdp-scan@v0.1.1`.
 
 **GitHub Action.** Findings go to the Security tab as code scanning alerts:
 
@@ -101,7 +101,7 @@ permissions:
   security-events: write
 steps:
   - uses: actions/checkout@v5
-  - uses: statecheck-security/dpdp-scan@v0.1.0
+  - uses: statecheck-security/dpdp-scan@v0.1.1
     with:
       fail-on: high            # none | low | medium | high
       # baseline: .dpdp-scan-baseline.json
