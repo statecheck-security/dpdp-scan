@@ -12,7 +12,6 @@ catalogue text plus the finding's masked evidence or its locator.
 
 from __future__ import annotations
 
-import hashlib
 import os
 from datetime import UTC, datetime
 from pathlib import Path, PurePath
@@ -22,7 +21,7 @@ from dpdp_scan import __version__
 from dpdp_scan.catalogue import CATALOGUE_VERSION, RuleInfo, catalogue, rule_info
 from dpdp_scan.engine import ScanResult
 from dpdp_scan.masking import DECLARED
-from dpdp_scan.model import Confidence, Finding
+from dpdp_scan.model import Confidence, Finding, fingerprint
 
 SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
 INFORMATION_URI = "https://github.com/statecheck-security/dpdp-scan"
@@ -67,11 +66,6 @@ def _rule_descriptor(info: RuleInfo, index: int) -> dict[str, Any]:
     }
 
 
-def _fingerprint(f: Finding) -> str:
-    raw = "\0".join((f.detector_id, f.path, str(f.line), f.locator or f.evidence))
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
-
-
 def _message(f: Finding, info: RuleInfo) -> str:
     where = f.locator if f.locator else f"masked value {f.evidence}"
     if f.evidence == DECLARED and not f.locator:
@@ -101,7 +95,7 @@ def _result(f: Finding, rule_index: dict[str, int]) -> dict[str, Any]:
                 }
             }
         ],
-        "partialFingerprints": {"dpdpScanFinding/v1": _fingerprint(f)},
+        "partialFingerprints": {"dpdpScanFinding/v1": fingerprint(f)},
         "properties": {
             "category": str(f.category),
             "confidence": str(f.confidence),

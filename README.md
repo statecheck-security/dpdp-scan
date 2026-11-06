@@ -58,6 +58,42 @@ dpdp-scan --version
 
 The v0.0.1 CLI exits with code 2 and reads nothing. It exists so the name is taken.
 
+## Configuration
+
+Put a `.dpdp-scan.yml` in the repository root (or pass `--config FILE`):
+
+```yaml
+version: 1
+ignore:
+  paths: ["fixtures/", "docs/**/*.md"]      # prefixes or globs, repo-relative
+detectors:
+  disable: ["in_mobile", "rule:dob-without-age-gate-js"]   # ids, or "schema" / "rules"
+allow:
+  domains: ["example-company.in"]            # your own mailboxes are not findings
+  values_sha256: ["<sha256>"]                # from `dpdp-scan --hash-value VALUE`; never the value
+fail_on: medium                              # default for --fail-on
+baseline: .dpdp-scan-baseline.json
+```
+
+Values are allowlisted by hash so the config never holds the value itself. Unknown keys are
+errors: a typo must not silently switch a check off.
+
+**Baseline.** `dpdp-scan --write-baseline .dpdp-scan-baseline.json` records a fingerprint
+for every current finding (detector, path, line and masked evidence; no values). With
+`--baseline` or the config's `baseline`, those findings are dropped and CI fails only on
+what is new.
+
+**Exit codes.**
+
+| Code | Meaning |
+|---|---|
+| 0 | Scan completed; no finding at or above `--fail-on` (default `none`: never fail) |
+| 1 | Scan completed; a finding is at or above `--fail-on`, or in a `--fail-on-category` |
+| 2 | Scan did not complete: bad arguments, unreadable path, invalid config or baseline |
+
+Semgrep being absent is not an error: the rule pack is skipped, a note goes to stderr, and
+the SARIF carries a tool notification.
+
 ## Development
 
 ```bash

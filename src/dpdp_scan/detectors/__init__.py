@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from dpdp_scan.config import AllowList
 from dpdp_scan.detectors.allowlist import is_allowlisted
 from dpdp_scan.detectors.base import Detector, Step
 from dpdp_scan.detectors.india import BY_ID, DETECTORS
@@ -31,12 +32,16 @@ def scan_text(
     detectors: Iterable[Detector] = DETECTORS,
     *,
     min_step: Step = Step.LOW,
+    allow: AllowList | None = None,
 ) -> list[Finding]:
     """Run ``detectors`` over ``text`` and return masked findings for ``path``.
 
     A UPI id is also an email by shape; when two detectors match the same span
-    the more specific one (earlier in ``DETECTORS``) wins.
+    the more specific one (earlier in ``DETECTORS``) wins. ``allow`` drops
+    values the user has accepted by hash, and emails or UPI ids on the user's
+    own domains.
     """
+    allow = allow or AllowList()
     line_starts = [0] + [i + 1 for i, ch in enumerate(text) if ch == "\n"]
     taken: list[tuple[int, int]] = []
     findings: list[Finding] = []
@@ -47,6 +52,8 @@ def scan_text(
                 continue
             cand = det.validate(m)
             if cand is None or is_allowlisted(det.id, cand.compact):
+                continue
+            if allow.allows_value(cand.compact) or allow.allows_domain(cand.compact):
                 continue
             step = min(det.context_step(text, start, end, cand.step), cand.cap)
             if step < min_step:

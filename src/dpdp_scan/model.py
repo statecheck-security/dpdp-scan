@@ -13,6 +13,7 @@ obligation is engaged.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections import Counter
 from dataclasses import asdict, dataclass, field
@@ -97,6 +98,14 @@ class Finding:
         d["confidence"] = str(self.confidence)
         d["provisions"] = [asdict(p) for p in self.provisions]
         return d
+
+
+def fingerprint(f: Finding) -> str:
+    """Stable id for a finding across runs: detector, path, line and the masked
+    evidence or locator. Shared by SARIF ``partialFingerprints`` and the
+    baseline file. Never includes a raw value."""
+    raw = "\0".join((f.detector_id, f.path, str(f.line), f.locator or f.evidence))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
 
 
 @dataclass(slots=True)

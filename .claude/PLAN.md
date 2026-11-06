@@ -105,9 +105,9 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 - **Done when:** SARIF validates against the 2.1.0 schema and uploads cleanly to GitHub code scanning on a test repo. ✅ schema half 2026-11-06 (`tests/data/sarif-2.1.0.json` vendored from schemastore; `jsonschema` dev dependency). The upload half is DS-8's first workflow run.
 
 ### DS-7 · Config, baseline, exit codes · ~0.5 d
-- [ ] `.dpdp-scan.yml` (ignore paths, allowlist values by hash rather than plaintext, detector toggles)
-- [ ] `--baseline` to write and compare, so existing findings don't fail CI
-- [ ] `--fail-on` with a confidence or category threshold; document the exit codes
+- [x] `.dpdp-scan.yml` (ignore paths, allowlist values by hash rather than plaintext, detector toggles) *(`config.py`: ignore prefixes and globs, `detectors.disable` by id or family, `allow.domains` for the organisation's own mailboxes, `allow.values_sha256` with `--hash-value` to compute them; unknown keys are errors)*
+- [x] `--baseline` to write and compare, so existing findings don't fail CI *(`baseline.py`; `--write-baseline FILE` and `--baseline FILE` or the config's `baseline`; fingerprints shared with SARIF, no values stored)*
+- [x] `--fail-on` with a confidence or category threshold; document the exit codes *(`--fail-on none|low|medium|high`, `--fail-on-category identity,age_dob`; exit 0 clean, 1 findings, 2 did not complete; README "Configuration" section)* ✅ 2026-11-06. scs with `allow.domains: [statechecksecurity.com]` drops from 88 findings to the handful of real example addresses.
 
 ### DS-8 · GitHub Action + Docker image · ~1 d
 **Depends on:** DS-6, DS-7

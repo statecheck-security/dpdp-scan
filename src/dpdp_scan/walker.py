@@ -19,6 +19,7 @@ sorted, so a scan of the same tree is deterministic on every platform.
 
 from __future__ import annotations
 
+import fnmatch
 import os
 import shutil
 import subprocess
@@ -86,7 +87,8 @@ _SNIFF_BYTES = 8 * 1024
 @dataclass(frozen=True, slots=True)
 class WalkOptions:
     max_bytes: int = DEFAULT_MAX_BYTES
-    #: Extra repo-relative path prefixes to skip (from ``.dpdp-scan.yml`` later).
+    #: Extra repo-relative prefixes or globs to skip (``ignore.paths`` in
+    #: ``.dpdp-scan.yml``). ``fixtures/`` skips a tree; ``docs/**/*.md`` is a glob.
     ignore_prefixes: tuple[str, ...] = ()
     #: Force the fallback walk even inside a git work tree. For tests.
     use_git: bool = True
@@ -127,9 +129,14 @@ def _is_skipped_path(relpath: str, opts: WalkOptions) -> bool:
     name = parts[-1]
     if name in opts.skip_files or name.endswith(SKIP_SUFFIXES):
         return True
-    return any(
-        relpath == p or relpath.startswith(p.rstrip("/") + "/") for p in opts.ignore_prefixes
-    )
+    for p in opts.ignore_prefixes:
+        if any(ch in p for ch in "*?["):
+            # A glob. "**" matches across directories (fnmatch's "*" already does).
+            if fnmatch.fnmatchcase(relpath, p.replace("**/", "*").replace("**", "*")):
+                return True
+        elif relpath == p or relpath.startswith(p.rstrip("/") + "/"):
+            return True
+    return False
 
 
 def _looks_binary(path: Path) -> bool:
