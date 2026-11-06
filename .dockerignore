@@ -1,0 +1,11 @@
+.git
+.venv
+.github
+.claude
+.pytest_cache
+.ruff_cache
+tests
+build
+dist
+*.egg-info
+*.sarif

@@ -1,0 +1,144 @@
+name: "DPDP Scan by StateCheck"
+description: >-
+  Finds Indian personal data (Aadhaar, PAN, GSTIN, UPI, IFSC, mobile) in code, schemas,
+  fixtures and logs, maps each finding to the DPDP Act obligation it touches, and uploads
+  SARIF to GitHub code scanning. Not legal advice.
+author: "StateCheck Security"
+
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  path:
+    description: "Directory to scan, relative to the repository root."
+    required: false
+    default: "."
+  config:
+    description: "Path to a .dpdp-scan.yml. Defaults to the one in the scanned directory, if any."
+    required: false
+    default: ""
+  min-confidence:
+    description: "Drop findings below this confidence: low, medium or high."
+    required: false
+    default: "low"
+  fail-on:
+    description: "Fail the step if any finding is at or above this confidence: none, low, medium or high."
+    required: false
+    default: "none"
+  fail-on-category:
+    description: "Comma-separated categories that fail the step at any confidence, e.g. identity,age_dob."
+    required: false
+    default: ""
+  baseline:
+    description: "Path to a baseline file; recorded findings are dropped so only new ones count."
+    required: false
+    default: ""
+  sarif-file:
+    description: "Where to write the SARIF file, relative to the repository root."
+    required: false
+    default: "dpdp-scan.sarif"
+  upload-sarif:
+    description: "Upload the SARIF to GitHub code scanning (needs `security-events: write`)."
+    required: false
+    default: "true"
+  semgrep:
+    description: "Install Semgrep so the rule pack runs. Set to false to skip it."
+    required: false
+    default: "true"
+  version:
+    description: "dpdp-scan version to install from PyPI. Empty installs this action's own checkout."
+    required: false
+    default: ""
+  python-version:
+    description: "Python version to set up."
+    required: false
+    default: "3.12"
+
+outputs:
+  sarif-file:
+    description: "Path to the SARIF file that was written."
+    value: ${{ steps.scan.outputs.sarif-file }}
+  findings:
+    description: "Number of findings after the baseline was applied."
+    value: ${{ steps.scan.outputs.findings }}
+  exit-code:
+    description: "dpdp-scan's exit code: 0 clean, 1 findings at or above fail-on, 2 did not complete."
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install dpdp-scan
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        ACTION_PATH: ${{ github.action_path }}
+        WITH_SEMGREP: ${{ inputs.semgrep }}
+      run: |
+        python -m pip install --quiet --upgrade pip
+        if [ -n "$VERSION" ]; then
+          python -m pip install --quiet "dpdp-scan==$VERSION"
+        else
+          python -m pip install --quiet "$ACTION_PATH"
+        fi
+        if [ "$WITH_SEMGREP" = "true" ]; then
+          python -m pip install --quiet semgrep
+        fi
+        dpdp-scan --version
+
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        SCAN_PATH: ${{ inputs.path }}
+        CONFIG: ${{ inputs.config }}
+        MIN_CONFIDENCE: ${{ inputs.min-confidence }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        FAIL_ON_CATEGORY: ${{ inputs.fail-on-category }}
+        BASELINE: ${{ inputs.baseline }}
+        SARIF_FILE: ${{ inputs.sarif-file }}
+        WITH_SEMGREP: ${{ inputs.semgrep }}
+        SEMGREP_SEND_METRICS: "off"
+      run: |
+        set +e
+        args=("$SCAN_PATH" --min-confidence "$MIN_CONFIDENCE" --fail-on "$FAIL_ON" --sarif "$SARIF_FILE" --format text)
+        [ -n "$CONFIG" ] && args+=(--config "$CONFIG")
+        [ -n "$FAIL_ON_CATEGORY" ] && args+=(--fail-on-category "$FAIL_ON_CATEGORY")
+        [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
+        [ "$WITH_SEMGREP" = "true" ] || args+=(--no-rules)
+        dpdp-scan "${args[@]}" | tee dpdp-scan.txt
+        code=${PIPESTATUS[0]}
+        findings=$(grep -oE '[0-9]+ findings' dpdp-scan.txt | head -1 | grep -oE '[0-9]+' || echo 0)
+        {
+          echo "sarif-file=$SARIF_FILE"
+          echo "findings=$findings"
+          echo "exit-code=$code"
+        } >> "$GITHUB_OUTPUT"
+        if [ "$code" = "2" ]; then
+          echo "::error::dpdp-scan did not complete (exit 2)"
+          exit 2
+        fi
+        if [ "$code" = "1" ]; then
+          echo "::warning::dpdp-scan found personal data at or above fail-on=$FAIL_ON ($findings findings)"
+        fi
+        # Remember the verdict; the upload step runs first so findings reach the Security tab.
+        echo "$code" > dpdp-scan.exit
+
+    - name: Upload SARIF to code scanning
+      if: ${{ inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: dpdp-scan
+
+    - name: Apply fail-on
+      shell: bash
+      run: |
+        code=$(cat dpdp-scan.exit 2>/dev/null || echo 0)
+        rm -f dpdp-scan.exit dpdp-scan.txt
+        exit "$code"

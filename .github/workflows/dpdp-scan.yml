@@ -1,0 +1,41 @@
+# Dogfood: scan this repository with its own Action and send the SARIF to the
+# Security tab. The test fixtures contain synthetic identifiers on purpose, so
+# this run is expected to produce findings; fail-on stays "none" here.
+name: dpdp-scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Scan with the action in this checkout
+        id: scan
+        uses: ./
+        with:
+          fail-on: none
+          sarif-file: dpdp-scan.sarif
+      - name: Summary
+        shell: bash
+        env:
+          FINDINGS: ${{ steps.scan.outputs.findings }}
+          CODE: ${{ steps.scan.outputs.exit-code }}
+        run: |
+          {
+            echo "## dpdp-scan"
+            echo
+            echo "Findings: $FINDINGS (exit code $CODE). Fixtures are synthetic by design."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: dpdp-scan-sarif
+          path: dpdp-scan.sarif
