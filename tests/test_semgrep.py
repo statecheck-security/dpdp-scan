@@ -65,6 +65,41 @@ def test_sanitise_masks_values_in_matched_code() -> None:
     assert "ravi.kumar@acme.in" not in out and "999999990019" not in out
     assert "user.email" in out and "  " not in out
     assert len(sanitise("x" * 500)) == 80
+    out = sanitise("pan='BNZPM2501F' gst='27AAPFU0939F1ZV' upi='ravi.k@okaxis' phone=9812345670")
+    for raw in ("BNZPM2501F", "27AAPFU0939F1ZV", "ravi.k@okaxis", "9812345670"):
+        assert raw not in out
+    assert out.startswith("pan='")
+
+
+def test_to_findings_falls_back_to_matched_line_when_no_metavars() -> None:
+    res = [
+        {
+            "check_id": "pii-in-logs-js",
+            "path": "a.js",
+            "start": {"line": 4, "col": 3},
+            "extra": {"message": "m", "lines": 'console.log("otp", user.phone, 9812345670)'},
+        }
+    ]
+    f = to_findings(res)[0]
+    assert "user.phone" in f.locator and "9812345670" not in f.locator
+
+
+def test_to_findings_reads_span_from_file_when_lines_require_login(tmp_path: Path) -> None:
+    src = "\n".join(["x();", 'console.log("otp", user.phone, 9812345670); // trailing', ""])
+    (tmp_path / "a.js").write_text(src, encoding="utf-8")
+    res = [
+        {
+            "check_id": "pii-in-logs-js",
+            "path": "a.js",
+            "start": {"line": 2, "col": 1},
+            "end": {"line": 2, "col": 45},
+            "extra": {"message": "m", "lines": "requires login"},
+        }
+    ]
+    f = to_findings(res, tmp_path.as_posix())[0]
+    assert f.locator.startswith('console.log("otp", user.phone,')
+    assert "9812345670" not in f.locator and "trailing" not in f.locator
+    assert to_findings(res)[0].locator == ""  # no root, nothing to read
 
 
 def test_to_findings_maps_metadata_and_masks() -> None:
@@ -137,3 +172,5 @@ def test_rule_pack_fires_on_fixtures_and_only_there(tmp_path: Path) -> None:
     ]
     assert [p.ref for p in dob[0].provisions] == ["S.9", "Rule 10"]
     assert dob[0].confidence == Confidence.LOW
+    logs = [f for f in result.inventory.findings if f.detector_id == "rule:pii-in-logs-python"]
+    assert all(f.locator for f in logs), "every rule finding names what matched"
