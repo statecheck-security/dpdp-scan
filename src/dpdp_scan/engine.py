@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from dpdp_scan.detectors import DETECTORS, scan_text
 from dpdp_scan.detectors.base import Detector, Step
 from dpdp_scan.model import Inventory
+from dpdp_scan.schema import classify_file
 from dpdp_scan.walker import WalkOptions, walk
 
 
@@ -25,6 +26,7 @@ def scan_path(
     detectors: Iterable[Detector] = DETECTORS,
     walk_options: WalkOptions | None = None,
     min_step: Step = Step.LOW,
+    schemas: bool = True,
 ) -> ScanResult:
     result = ScanResult()
     dets = tuple(detectors)
@@ -36,4 +38,6 @@ def scan_path(
             continue
         result.files_scanned += 1
         result.inventory.extend(scan_text(text, wf.relpath, dets, min_step=min_step))
+        if schemas:
+            result.inventory.extend(classify_file(text, wf.relpath, min_step=min_step))
     return result

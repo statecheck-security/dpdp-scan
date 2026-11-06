@@ -134,8 +134,11 @@ def test_email_personal_vs_role_vs_example() -> None:
     assert one("ravi.kumar@acme.in", "email").confidence == Confidence.MEDIUM
     assert one("email: ravi.kumar@acme.in", "email").confidence == Confidence.HIGH
     assert one("noreply@acme.in", "email").confidence == Confidence.LOW
+    assert one("email: privacy@acme.in", "email").confidence == Confidence.LOW  # capped
     assert "email" not in ids(scan_text("user@example.com", "t.py"))
     assert "email" not in ids(scan_text("x@host.test", "t.py"))
+    assert "email" not in ids(scan_text("you@company.com or jane.doe@acme.in", "t.py"))
+    assert one("email: legal@acme.in", "email").confidence == Confidence.LOW  # role, capped
 
 
 # ---- context and allowlist -------------------------------------------------

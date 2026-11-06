@@ -84,9 +84,9 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
   The 12-digit floor is the honest number for the README: a bare, context-free 12-digit value that passes Verhoeff is reported HIGH, and about one random 12-digit number in ten does. Field names are what make the difference, which is why DS-4 matters.
 
 ### DS-4 · Schema and field-name classifier · ~2 d
-- [ ] Parsers for SQL DDL/migrations, Prisma schema, and OpenAPI/JSON Schema properties
-- [ ] Name lexicon covering English plus common Indian abbreviations and misspellings (`aadhar`, `adhaar`, `mobno`, `pincode`), mapped to inventory categories; table and column names roll up into the inventory
-- **Done when:** run on bytesnapp's Prisma schema and scs's Sanity-backed APIs, it produces a sensible inventory. Those are our own repos; don't use client projects.
+- [x] Parsers for SQL DDL/migrations, Prisma schema, and OpenAPI/JSON Schema properties *(`schema/parsers.py`: CREATE TABLE bodies with nested parens and comments, ALTER TABLE ADD COLUMN, Prisma model/type blocks, a tree walk over `properties` and `parameters` in JSON or YAML; non-schema JSON/YAML is ignored)*
+- [x] Name lexicon covering English plus common Indian abbreviations and misspellings (`aadhar`, `adhaar`, `mobno`, `pincode`), mapped to inventory categories; table and column names roll up into the inventory *(`schema/lexicon.py`: phrase rules first, then single words, then fused substrings; a bare `name` column counts only in a person-like table; `contract_address`, `tx_hash`, `event_name` and friends are explicit non-matches; findings carry `locator` = `table.column`)*
+- **Done when:** run on bytesnapp's Prisma schema and scs's Sanity-backed APIs, it produces a sensible inventory. Those are our own repos; don't use client projects. ✅ 2026-11-06. bytesnapp: exactly `User.walletAddress`, `User.username`, `User.avatarUrl` (all LOW) from the Prisma schema and the same three from its SQL migration; `Game.name`, `BlockchainEvent.eventName`, `contractAddr`, hashes and timestamps correctly absent. scs: 0 findings at HIGH, 88 at LOW/MEDIUM, all the company's own role mailboxes (`privacy@`, `legal@`, `contact@`), which the DS-7 config allowlist should accept by domain. scs's Sanity schemas are TypeScript, which the v0.1 parsers do not read; ORM/TS models are v0.2 as planned.
 
 ### DS-5 · Semgrep rule pack · ~2 d
 - [ ] Port paranoid's Semgrep runner: the timeouts, process-tree kill, argv batching and degrade-if-missing behaviour

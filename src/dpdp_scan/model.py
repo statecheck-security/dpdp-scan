@@ -71,6 +71,10 @@ class Finding:
     #: Free text the reporter may show. Must not contain the raw value either;
     #: build it with masking.mask_in when quoting context.
     message: str = ""
+    #: Where a declared field lives: ``table.column``, ``Model.field`` or a
+    #: schema path. A name, never a value, so it is not masked. Empty for
+    #: value findings.
+    locator: str = ""
 
     def __post_init__(self) -> None:
         if not is_masked(self.evidence):

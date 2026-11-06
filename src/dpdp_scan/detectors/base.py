@@ -50,6 +50,8 @@ class Candidate:
 
     compact: str  # separators removed, case normalised; what the allowlist sees
     step: Step
+    #: Context can raise the step, but never above this. A role mailbox stays LOW.
+    cap: Step = Step.HIGH
 
 
 def compact_value(raw: str) -> str:

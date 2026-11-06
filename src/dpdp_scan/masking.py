@@ -22,6 +22,10 @@ FULLY_MASK_UP_TO = 6
 
 _MASKED_RE = re.compile(rf"^\{MASK_CHAR}{{1,{MAX_MASK_RUN}}}[^\s{MASK_CHAR}]{{0,{KEEP}}}$")
 
+#: Evidence for a finding that has no value: a declared field in a schema. It
+#: passes :func:`is_masked` and says "nothing was read" rather than "hidden".
+DECLARED = MASK_CHAR
+
 
 def mask(value: str) -> str:
     """Return ``value`` with all but its last :data:`KEEP` characters replaced.

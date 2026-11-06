@@ -209,8 +209,72 @@ _ROLE_LOCAL_PARTS = (
     "notifications",
     "alerts",
     "bot",
+    "legal",
+    "compliance",
+    "incident",
+    "incidents",
+    "soc",
+    "noc",
+    "onboarding",
+    "marketing",
+    "hr",
+    "finance",
+    "accounts",
+    "office",
+    "enquiries",
+    "inquiries",
+    "feedback",
+    "newsletter",
+    "ops",
+    "devops",
+    "dev",
+    "engineering",
+    "product",
+    "partners",
+    "partnerships",
+    "media",
+    "investors",
+    "nodal",
+    "mailer-daemon",
+    "system",
+    "root",
 )
-_EXAMPLE_DOMAINS = ("example.com", "example.org", "example.net", "example.in", "test.com")
+#: Locals that are placeholders in documentation and templates, never a person.
+_PLACEHOLDER_LOCAL_PARTS = (
+    "you",
+    "your",
+    "yourname",
+    "your.name",
+    "your-name",
+    "name",
+    "user",
+    "username",
+    "someone",
+    "somebody",
+    "me",
+    "email",
+    "firstname.lastname",
+    "first.last",
+    "john.doe",
+    "jane.doe",
+    "foo",
+    "bar",
+    "test",
+    "a",
+    "x",
+)
+_EXAMPLE_DOMAINS = (
+    "example.com",
+    "example.org",
+    "example.net",
+    "example.in",
+    "test.com",
+    "email.com",
+    "domain.com",
+    "company.com",
+    "yourdomain.com",
+    "yourcompany.com",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,8 +285,11 @@ class EmailDetector(Detector):
             return None
         if domain.split(".")[0] in ("localhost",):
             return None
-        step = Step.LOW if local.lower() in _ROLE_LOCAL_PARTS else Step.MEDIUM
-        return Candidate(f"{local.lower()}@{domain}", step)
+        if local.lower() in _PLACEHOLDER_LOCAL_PARTS:
+            return None
+        if local.lower() in _ROLE_LOCAL_PARTS:
+            return Candidate(f"{local.lower()}@{domain}", Step.LOW, cap=Step.LOW)
+        return Candidate(f"{local.lower()}@{domain}", Step.MEDIUM)
 
 
 # Context words. Lower-case; matched as substrings of the window.

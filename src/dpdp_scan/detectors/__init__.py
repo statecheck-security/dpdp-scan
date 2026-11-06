@@ -48,7 +48,7 @@ def scan_text(
             cand = det.validate(m)
             if cand is None or is_allowlisted(det.id, cand.compact):
                 continue
-            step = det.context_step(text, start, end, cand.step)
+            step = min(det.context_step(text, start, end, cand.step), cand.cap)
             if step < min_step:
                 continue
             taken.append((start, end))

@@ -75,7 +75,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         for f in inv.sorted():
             provisions = ", ".join(p.ref for p in f.provisions)
             print(
-                f"{f.path}:{f.line}:{f.column}  {f.detector_id}  {f.evidence}  "
+                f"{f.path}:{f.line}:{f.column}  {f.detector_id}  {f.locator or f.evidence}  "
                 f"[{f.confidence}]  {provisions}"
             )
     print()
