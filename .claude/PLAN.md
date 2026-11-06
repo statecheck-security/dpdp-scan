@@ -56,9 +56,9 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 
 ### DS-1 · Repo bootstrap · ~0.5 d
 - [x] Check the name is free on PyPI and GitHub (fallbacks: `dpdpscan`, `india-pii-scan`) *(free on PyPI, npm and GitHub on 2026-11-05)*
-- [x] `H:\github\dpdp-scan`: `pyproject.toml`, Apache-2.0 `LICENSE` + `NOTICE` (crediting the code ported from paranoid), ruff, pytest, CI (lint + test on Linux and Windows), and a README with scope, non-goals and "not legal advice" *(2026-11-06, commit c766c27; CI green still to be confirmed on GitHub)*
+- [x] `H:\github\dpdp-scan`: `pyproject.toml`, Apache-2.0 `LICENSE` + `NOTICE` (crediting the code ported from paranoid), ruff, pytest, CI (lint + test on Linux and Windows), and a README with scope, non-goals and "not legal advice" *(2026-11-06, commit c766c27; CI green on run 42208598485: Ubuntu and Windows, py3.12 and py3.13)*
 - [x] Move this plan into the repo as `.claude/PLAN.md` and leave a pointer here *(2026-11-06)*
-- **Done when:** CI is green on an empty package.
+- **Done when:** CI is green on an empty package. ✅ 2026-11-06
 
 ### DS-2 · Core: finding model, walker, masking · ~1 d
 - [ ] `Finding` (detector id, category, path, line/col, masked evidence, confidence, Act-section pointer) and `Inventory`
