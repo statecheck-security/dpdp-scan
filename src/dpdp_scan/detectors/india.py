@@ -238,6 +238,12 @@ _ROLE_LOCAL_PARTS = (
     "mailer-daemon",
     "system",
     "root",
+    "git",
+    "deploy",
+    "ci",
+    "build",
+    "jenkins",
+    "github-actions",
 )
 #: Locals that are placeholders in documentation and templates, never a person.
 _PLACEHOLDER_LOCAL_PARTS = (
@@ -281,6 +287,13 @@ _EXAMPLE_DOMAINS = (
 class EmailDetector(Detector):
     def validate(self, match: Match[str]) -> Candidate | None:
         local, domain = match.group(1), match.group(2).lower()
+        # "ssh://git@host" and "https://user@host": a URL userinfo, not a mailbox.
+        if match.string[max(0, match.start() - 3) : match.start()] == "://":
+            return None
+        # "owner/repo@v0.1.0" and "react@18.3.1" have the shape but not a real
+        # top-level label: a TLD is letters only, two or more of them.
+        if not domain.rsplit(".", 1)[-1].isalpha() or len(domain.rsplit(".", 1)[-1]) < 2:
+            return None
         if domain in _EXAMPLE_DOMAINS or domain.endswith((".example", ".invalid", ".test")):
             return None
         if domain.split(".")[0] in ("localhost",):

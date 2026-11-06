@@ -3,6 +3,15 @@
 All notable changes to dpdp-scan. Dates are UTC. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-11-06
+
+### Fixed
+
+- The email detector no longer matches version references such as
+  `owner/repo@v0.1.0` or `react@18.3.1` (a top-level label must be letters), nor the
+  userinfo of a URL such as `ssh://git@host`. Service accounts (`git@`, `deploy@`, `ci@`)
+  are capped at LOW like other role mailboxes. Found by the DVDPA demo's own workflow file.
+
 ## [0.1.0] - 2026-11-06
 
 First usable release.
@@ -32,4 +41,5 @@ First usable release.
 Cross-service data-flow mapping, free-text NER, database or live-system scanning,
 ORM and TypeScript model parsing, and any compliance score or verdict.
 
+[0.1.1]: https://github.com/statecheck-security/dpdp-scan/releases/tag/v0.1.1
 [0.1.0]: https://github.com/statecheck-security/dpdp-scan/releases/tag/v0.1.0

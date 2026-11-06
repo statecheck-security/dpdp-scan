@@ -144,6 +144,22 @@ def test_email_personal_vs_role_vs_example() -> None:
 # ---- context and allowlist -------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "uses: statecheck-security/dpdp-scan@v0.1.0",
+        'depends on "react@18.3.1" and lodash@4',
+        "git+ssh://git@github.com:org/repo.git",
+        "https://deploy@internal.example.org/x",
+        "image: ghcr.io/org/app@sha256",
+    ],
+)
+def test_version_refs_and_git_urls_are_not_emails(text: str) -> None:
+    found = [f for f in scan_text(text, "t.yml") if f.detector_id == "email"]
+    # A service account ("git@") may still register, but never above LOW.
+    assert all(f.confidence == Confidence.LOW for f in found), text
+
+
 def test_negative_context_lowers_a_step() -> None:
     assert one(f"order_id = {AADHAAR}", "in_aadhaar").confidence == Confidence.MEDIUM
 
