@@ -111,10 +111,21 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 
 ### DS-8 · GitHub Action + Docker image · ~1 d
 **Depends on:** DS-6, DS-7
-- [ ] Docker image with Semgrep included; `action.yml` modelled on paranoid's `action/`
-- [ ] An example workflow that uploads SARIF
-- [ ] Dogfood on scs, bytesnapp and paranoid, plus 3 public Indian OSS repos
-- **Done when:** a real workflow run on GitHub shows findings in the Security tab.
+- [x] Docker image with Semgrep included; `action.yml` modelled on paranoid's `action/` *(`Dockerfile`: python:3.12-slim, Semgrep, git, non-root; `action.yml` is composite rather than Docker so a run costs a pip install, not an image build; Marketplace title "DPDP Scan by StateCheck")*
+- [x] An example workflow that uploads SARIF *(`.github/workflows/dpdp-scan.yml` dogfoods the action on this repo; upload runs before fail-on so findings reach the Security tab either way)*
+- [x] Dogfood on scs, bytesnapp and paranoid, plus 3 public Indian OSS repos *(2026-11-06, CLI with Semgrep, counts only; no values recorded)*
+
+  | Repo | Files | Findings | By detector | Note |
+  |---|---:|---:|---|---|
+  | scs | 237 | 89 | email 88, pii-in-logs-js 1 | own role mailboxes; 3 with the domain allowlist |
+  | bytesnapp | 207 | 18 | pii-in-logs-js 10, schema 6, email 2 | the log rule found real console.log of user fields |
+  | paranoid | 555 | 173 | email 173 (50 HIGH) | fixture and docs addresses; a candidate for `allow.domains` and `ignore.paths` |
+  | razorpay/razorpay-python | 223 | 213 | mobile 116, ifsc 49, pan 14, email 22, gstin 5, upi 5, aadhaar 1, epic 1 | a payments SDK's test fixtures; what the detectors are for |
+  | tsi-coop/tsi-dpdp-cms | 335 | 212 | email 184, schema 21, mobile 7 | an open-source consent manager; schema findings are its own PII columns |
+  | Vettam/dpdp-compliance-scanner | 309 | 19 | email 13, schema_openapi 6 | a competitor's repo; its OpenAPI declares email fields |
+
+  Things these runs taught: fixture-heavy repos need `ignore.paths` and `allow.domains` to be useful (DS-7 has both); the mobile detector is the noisiest at LOW, which DS-9 should quantify; inside Docker git refused the mounted repo as "dubious ownership" until `safe.directory` was set.
+- **Done when:** a real workflow run on GitHub shows findings in the Security tab. ✅ 2026-11-06: run 42216142255 uploaded SARIF from commit 86c6808; the Security tab lists 88 dpdp-scan alerts across 11 rule ids (value detectors, both age-gate rules and pii-in-logs-js), all from the synthetic test fixtures. This also closes DS-6's upload half.
 
 ### DS-9 · Benchmark · ~1 d
 - [ ] A labelled fixture set (synthetic only, with no real identifiers): positives and hard negatives per detector

@@ -24,6 +24,9 @@ RUN apt-get update \
     && useradd --create-home --uid 10001 scanner
 COPY --from=build /install /usr/local
 USER scanner
+# A mounted repository is owned by the host user; without this git refuses it
+# ("dubious ownership") and the walker falls back to scanning without .gitignore.
+RUN git config --global --add safe.directory '*'
 WORKDIR /repo
 ENV SEMGREP_SEND_METRICS=off \
     PYTHONDONTWRITEBYTECODE=1 \
