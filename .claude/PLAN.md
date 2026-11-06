@@ -67,10 +67,21 @@ Python 3.12 (paranoid reuse; Semgrep and Presidio are Python), Apache-2.0, `uv`/
 - **Done when:** a fixture repo walks deterministically and a test proves no raw value reaches any output. ✅ 2026-11-06, 50 tests
 
 ### DS-3 · Validated value detectors · ~2 d
-- [ ] Verhoeff and GSTIN checksum implementations, tested against published examples
-- [ ] Detectors for the v0.1 identifier list, each with a context window (field/key names nearby raise confidence)
-- [ ] A false-positive corpus: random 12-digit numbers, timestamps, order IDs, UUID fragments, phone-like numbers. Add known dummy/test values (sequences, documented test Aadhaar values) to a built-in allowlist.
-- **Done when:** each detector's precision is measured on the corpus, and the numbers are recorded for DS-9.
+- [x] Verhoeff and GSTIN checksum implementations, tested against published examples *(`detectors/checksums.py`; Verhoeff against the 236→3 example and five UIDAI test UIDs, GSTIN mod-36 against 27AAPFU0939F1ZV)*
+- [x] Detectors for the v0.1 identifier list, each with a context window (field/key names nearby raise confidence) *(`detectors/india.py`: 10 detectors; 48 chars before and 16 after; positive words raise one step, negative words or a glued `ORD-`/`TXN_` prefix lower one step)*
+- [x] A false-positive corpus: random 12-digit numbers, timestamps, order IDs, UUID fragments, phone-like numbers. Add known dummy/test values (sequences, documented test Aadhaar values) to a built-in allowlist. *(`tests/test_detectors.py` corpus with per-class budgets; `detectors/allowlist.py` with 14 UIDAI test UIDs, documented PANs, trivial digit runs)*
+- **Done when:** each detector's precision is measured on the corpus, and the numbers are recorded for DS-9. ✅ 2026-11-06. Corpus record (seed 20261106):
+
+  | Class | n | Findings | Note |
+  |---|---|---|---|
+  | uuid, sha, hex tokens, epoch s/ms, ISO datetimes, ports+versions, pincodes, SKUs | 200 each | 0 | boundaries and shapes exclude them |
+  | card-like 16 digits in 4 groups | 200 | 0 | after the adjacent-digit-group lookarounds |
+  | random 12-digit (2–9 first) | 1000 | 91 Aadhaar, all HIGH | the Verhoeff floor: ~1 in 10 passes; no context to lower them |
+  | `ORD-` + 12 digits | 200 | 19 Aadhaar, all MEDIUM | code prefix lowers a step |
+  | `order_id = ` + 12 digits | 200 | 27 Aadhaar, all MEDIUM | negative context lowers a step |
+  | random 10-digit | 1000 | 462 mobile, all LOW | shape only; 4 of 9 first digits are 6–9 |
+
+  The 12-digit floor is the honest number for the README: a bare, context-free 12-digit value that passes Verhoeff is reported HIGH, and about one random 12-digit number in ten does. Field names are what make the difference, which is why DS-4 matters.
 
 ### DS-4 · Schema and field-name classifier · ~2 d
 - [ ] Parsers for SQL DDL/migrations, Prisma schema, and OpenAPI/JSON Schema properties

@@ -1,7 +1,12 @@
+from pathlib import Path
+
 import pytest
 
 from dpdp_scan import __version__
 from dpdp_scan.cli import main
+from dpdp_scan.detectors.checksums import verhoeff_check_digit
+
+AADHAAR = "45678901234" + verhoeff_check_digit("45678901234")
 
 
 def test_version_flag_prints_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -11,15 +16,26 @@ def test_version_flag_prints_version(capsys: pytest.CaptureFixture[str]) -> None
     assert __version__ in capsys.readouterr().out
 
 
-def test_placeholder_run_reads_nothing_and_exits_2(
-    tmp_path, capsys: pytest.CaptureFixture[str]
+def test_scan_prints_masked_summary_and_never_the_value(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    secret = tmp_path / "fixture.txt"
-    secret.write_text("999999990019")  # a published UIDAI test number, never a real one
-    code = main([str(tmp_path)])
-    err = capsys.readouterr().err
-    assert code == 2
-    assert "not built yet" in err
-    assert "not legal advice" in err
-    # No value from the scanned tree may ever reach an output stream.
-    assert "999999990019" not in err
+    (tmp_path / "fixture.txt").write_text(f"aadhaar: {AADHAAR}\n", encoding="utf-8")
+    code = main([str(tmp_path), "--no-git"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "1 files scanned, 1 findings" in out
+    assert "in_aadhaar" in out and "S.8(5)" in out
+    assert "not legal advice" in out
+    assert AADHAAR not in out
+    assert AADHAAR[-4:] in out  # the mask keeps the last four
+
+
+def test_min_confidence_filter(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / "f.txt").write_text("9812345670\n", encoding="utf-8")
+    main([str(tmp_path), "--no-git", "--min-confidence", "medium"])
+    assert "0 findings" in capsys.readouterr().out
+
+
+def test_missing_path_exits_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert main([str(tmp_path / "nope")]) == 2
+    assert "not a directory" in capsys.readouterr().err
