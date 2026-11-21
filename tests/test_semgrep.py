@@ -119,6 +119,25 @@ def test_to_findings_maps_metadata_and_masks() -> None:
     assert "999999990019" not in json.dumps([x.to_dict() for x in findings])
 
 
+def test_to_findings_prefers_dpdp_category_over_registry_category() -> None:
+    result = {
+        "check_id": "src.dpdp_scan.rules.pii-to-analytics-js",
+        "path": "web/track.js",
+        "start": {"line": 3, "col": 1},
+        "end": {"line": 3, "col": 10},
+        "extra": {
+            "message": "Personal data is sent to an analytics SDK.",
+            "metadata": {
+                "category": "security",
+                "dpdp_category": "identity",
+                "confidence": "MEDIUM",
+            },
+        },
+    }
+    (f,) = to_findings([result])
+    assert f.category == Category.IDENTITY and f.confidence == Confidence.MEDIUM
+
+
 def test_to_findings_strips_root_prefix_and_drops_absolute() -> None:
     res = [{"check_id": "r", "path": "/repo/a.py", "start": {"line": 1, "col": 1}}]
     assert to_findings(res, "/repo")[0].path == "a.py"
@@ -171,6 +190,9 @@ def test_rule_pack_fires_on_fixtures_and_only_there(tmp_path: Path) -> None:
         f for f in result.inventory.findings if f.detector_id == "rule:dob-without-age-gate-python"
     ]
     assert [p.ref for p in dob[0].provisions] == ["S.9", "Rule 10"]
-    assert dob[0].confidence == Confidence.LOW
+    # Registry metadata spells confidence in capitals and uses `category` for
+    # its own taxonomy; the inventory reads dpdp_category and lowercases.
+    assert dob[0].confidence == Confidence.LOW and dob[0].category == Category.AGE_DOB
     logs = [f for f in result.inventory.findings if f.detector_id == "rule:pii-in-logs-python"]
     assert all(f.locator for f in logs), "every rule finding names what matched"
+    assert all(f.category == Category.IDENTITY and f.confidence == Confidence.MEDIUM for f in logs)

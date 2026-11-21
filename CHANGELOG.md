@@ -3,6 +3,17 @@
 All notable changes to dpdp-scan. Dates are UTC. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- The rule pack carries Semgrep Registry metadata: `category`, `subcategory`, `cwe`,
+  `owasp`, `vulnerability_class`, `likelihood`, `impact`, `technology` and `references`,
+  with confidence in capitals. Every rule now passes the registry's metadata schema and
+  rule lints. The inventory category moved from `category` to `dpdp_category`, and
+  findings are filed exactly as before. Rule messages are folded onto one line (`>-`).
+- `src/dpdp_scan/rules/README.md` documents each rule, its metadata and its fixtures.
+
 ## [0.1.1] - 2026-11-06
 
 ### Fixed

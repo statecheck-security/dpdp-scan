@@ -158,3 +158,87 @@ About **12 working days**. Start after Arsenal (10-29) and once the Gap Identifi
 1. Name (`dpdp-scan` proposed)
 2. Python (recommended, for paranoid reuse) or Go (single binary, like context-link)
 3. Org: personal `theAstiv` or a StateCheck GitHub org. A StateCheck org makes it a brand asset.
+
+---
+
+## dpdp-scan v0.2 — Implementation Plan
+
+> Written: 2026-11-07, moved here from `.claude/dpdp-scan-v0-2.md` when work started | Status: in progress (DS2-3, DS2-4 started 2026-11-22)
+
+### Why
+
+- **The dogfood found the edge.** scs's Sanity schemas and bytesnapp's TypeScript models are not parsed (v0.1 reads SQL, Prisma, OpenAPI only), so the data map for a TypeScript-first codebase is thin. The plan always listed ORM models as v0.2.
+- **Two cheap visibility wins** are still unclaimed: the first Semgrep-registry pack for Indian identifiers, and the Presidio upstream PR (GSTIN mod-36, PAN `validate_result`) which makes the de facto standard engine better and links back to us.
+- **The gitleaks shape is not complete** without a pre-commit hook.
+- **Nine competitors appeared in four months**; v0.2 within a month of v0.1 keeps the cadence SecureLayer7's repos used to reach 250 stars.
+
+### Scope
+
+1. **Model parsers** (`schema/parsers.py` additions, each with fixtures):
+   - Python ORMs: Django `models.Model` fields, SQLAlchemy `Column(...)` and mapped dataclasses, Pydantic models (request/response schemas), dataclasses with type hints
+   - TypeScript: TypeORM `@Column` decorators, Mongoose schemas, Zod objects, plain `interface` / `type` declarations in files named like models, DTOs or types
+   - Sanity: `defineField({ name, type })` inside `defineType` schemas (our own case)
+   - Each yields `Field(container, name, line)` into the existing lexicon; the container label becomes `Model.field`
+2. **Semgrep registry submission**: the six rules as a public pack `p/dpdp-scan` with registry metadata (category, confidence, likelihood, impact, subcategory, references to the Act). Requires fixtures per rule (have) and a `README` in the rules folder.
+3. **Presidio upstream PR**: `IN_GSTIN` gets the mod-36 check character; `IN_PAN` gets a `validate_result` for the holder-type character; tests in their suite. Cite the GSTN format document.
+4. **Pre-commit hook**: `.pre-commit-hooks.yaml` so `repo: https://github.com/statecheck-security/dpdp-scan` works with `pre-commit`; runs on staged files only (`--files` mode added to the CLI).
+5. **Config additions** learned from dogfood: `ignore.paths` glob defaults for `fixtures/` and `test*/` as an opt-in preset (`presets: [test-data]`), and `allow.domains` documentation pointing at the scs case.
+6. **Optional Presidio plug-in** (`dpdp-scan[ner]`): free-text names and addresses via Presidio's NLP recognisers for Markdown, CSV and JSON fixtures. Off by default; a separate extra so the base install stays dependency-light.
+7. **Benchmark growth**: add model-declaration positives and negatives per parser; add a Hinglish field-name class (`naam`, `pata`, `janm_tithi`) to the lexicon and the bench.
+
+**Not in v0.2:** cross-service data flow; database scanning; a hosted dashboard.
+
+### Ground rules
+
+Unchanged from v0.1: masked output, no verdict, inventory labels not legal tiers, honest k/N numbers, Apache-2.0, every rule readable.
+
+### Tasks
+
+#### DS2-1 · Model parsers · ~2 d
+- [ ] Django, SQLAlchemy, Pydantic, dataclass parsers (Python `ast`, no regex over code)
+- [ ] TypeORM, Mongoose, Zod, interface/type parsers (regex plus a small tokenizer; no TypeScript compiler dependency)
+- [ ] Sanity `defineField` parser; run on scs `sanity/schemas/` and record the inventory in the plan
+- [ ] `schema_kind()` extended by filename and content sniff; new detector ids `schema_python`, `schema_ts`, `schema_sanity`
+- **Done when:** bytesnapp's TypeScript models and scs's Sanity schemas produce a sensible inventory, recorded in the plan with counts.
+
+#### DS2-2 · Pre-commit and `--files` · ~0.5 d
+- [ ] `--files a b c` scans named paths only; `--staged` uses `git diff --cached --name-only`
+- [ ] `.pre-commit-hooks.yaml`; README section
+- **Done when:** `pre-commit try-repo` on DVDPA blocks a commit that adds a synthetic Aadhaar.
+
+#### DS2-3 · Semgrep registry · ~0.5 d
+- [x] Registry metadata on every rule; `rules/README.md` *(2026-11-22, branch `feat/ds2-3-registry-metadata`. The inventory category moved to `dpdp_category`, because the registry owns `category` (security, best-practice). All six rules pass the registry's metadata schema (`validate-metadata.py`) and all 23 lint configs in its `semgrep-rule-lints` CI, including the changed-files CWE check, with zero findings.)*
+- [x] Per-rule submission tree prepared in the registry's layout: `python|javascript/lang/{security/audit,best-practice}/dpdp/<rule>.yaml`, each with its own split fixture. `semgrep --test` gives 6/6.
+- [ ] Submit: a PR to `semgrep/semgrep-rules` plus their CLA. **Blocked on open decision 3.**
+- Findings: contributors can't create a `p/` pack. Packs look curated or built from `technology`, so `p/dpdp-scan` is a request to Semgrep, not something we can create. Registry rules are distributed under the Semgrep Rules License v1.0, which is use-only with no redistribution. The CLA text wasn't found in the docs; the CLA bot links it on the PR. The official MeitY Act and Rules pages refuse automated fetches, so `references` cite Wikipedia, the CWE and this repo for now.
+- **Done when:** `semgrep --config p/dpdp-scan` runs the pack (or the submission is open with a link recorded here).
+
+#### DS2-4 · Presidio PR · ~0.5 d
+- [x] GSTIN mod-36 in `in_gstin_recognizer.py`'s `validate_result`; PAN holder-type `validate_result`; their tests *(2026-11-22, local branch `india-gstin-checksum-pan-holder-type` in a clone of `data-privacy-stack/presidio`, which is microsoft/presidio's new home. 83 India tests pass, and `ruff check` is clean.)*
+- Notes:
+  - Every existing Presidio GSTIN fixture had a wrong check character, so they were replaced with valid ones.
+  - The check matches python-stdnum on 720,000 random inputs.
+  - No official GSTN/CBIC algorithm document was found, so the docstring cites Luhn mod N and python-stdnum.
+  - PAN `validate_result` returns False only for an exact PAN shape with an unassigned holder type, and never True.
+- [ ] Fork, push and open the PR; record the link here. **Waiting on the owner's go-ahead.**
+- **Done when:** the PR is open with tests passing in their CI.
+
+#### DS2-5 · NER extra and presets · ~1 d
+- [ ] `dpdp-scan[ner]` extra; `--ner` flag; findings as `ner_person`, `ner_location` at LOW, masked like everything else
+- [ ] `presets: [test-data]`; docs
+- **Done when:** the base wheel has no new dependencies and `--ner` works in a venv with the extra.
+
+#### DS2-6 · Bench and release · ~0.5 d
+- [ ] Bench classes for each parser and the Hinglish lexicon; README table regenerated with date and commit
+- [ ] CHANGELOG, tag `v0.2.0`; the release workflow publishes to PyPI; blog note and LinkedIn post
+- **Done when:** v0.2.0 is on PyPI and the README numbers carry the new commit.
+
+### Estimate
+
+About **5 working days**. DS2-3 and DS2-4 are independent of the rest and can be done first for visibility.
+
+### Open decisions (yours)
+
+1. Whether to parse TypeScript with a real parser (adds `tree-sitter` as a dependency) or keep the light tokenizer and accept misses on exotic syntax. Recommendation: tokenizer, measure misses in the bench, revisit.
+2. Whether the NER extra ships in v0.2 or v0.3; it is the one item that pulls in heavy dependencies.
+3. The Semgrep registry licence terms (rules there are under the registry's licence); confirm it is compatible with keeping Apache-2.0 in our repo.

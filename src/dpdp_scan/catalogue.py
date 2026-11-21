@@ -128,7 +128,7 @@ def _semgrep_rules() -> dict[str, RuleInfo]:
                 name=str(meta.get("label", rule["id"])).capitalize(),
                 description=description,
                 remediation=remediation.rstrip(".") + "." if remediation else "",
-                category=Category(meta.get("category", "other")),
+                category=Category(meta.get("dpdp_category", "other")),
                 provisions=tuple(Provision(str(ref)) for ref in meta.get("dpdpa", [])),
             )
     return out
