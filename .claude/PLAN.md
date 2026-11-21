@@ -220,7 +220,8 @@ Unchanged from v0.1: masked output, no verdict, inventory labels not legal tiers
   - The check matches python-stdnum on 720,000 random inputs.
   - No official GSTN/CBIC algorithm document was found, so the docstring cites Luhn mod N and python-stdnum.
   - PAN `validate_result` returns False only for an exact PAN shape with an unassigned holder type, and never True.
-- [ ] Fork, push and open the PR; record the link here. **Waiting on the owner's go-ahead.**
+- [x] Fork, push and open the PR: https://github.com/data-privacy-stack/presidio/pull/2525 *(2026-11-22, from `theAstiv/presidio`)*
+- [ ] CI green and merged
 - **Done when:** the PR is open with tests passing in their CI.
 
 #### DS2-5 · NER extra and presets · ~1 d
