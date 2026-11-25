@@ -36,7 +36,8 @@ rules:
       confidence: MEDIUM
       technology: [python]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
         - https://cwe.mitre.org/data/definitions/532.html
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: identity
@@ -85,7 +86,8 @@ rules:
       confidence: MEDIUM
       technology: [javascript, typescript]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
         - https://cwe.mitre.org/data/definitions/532.html
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: identity
@@ -129,7 +131,7 @@ rules:
       confidence: MEDIUM
       technology: [python]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
         - https://cwe.mitre.org/data/definitions/359.html
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: identity
@@ -173,7 +175,7 @@ rules:
       confidence: MEDIUM
       technology: [javascript, typescript]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
         - https://cwe.mitre.org/data/definitions/359.html
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: identity
@@ -219,7 +221,8 @@ rules:
       confidence: LOW
       technology: [python]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: age_dob
       dpdpa: ["S.9", "Rule 10"]
@@ -280,7 +283,8 @@ rules:
       confidence: LOW
       technology: [javascript, typescript]
       references:
-        - https://en.wikipedia.org/wiki/Digital_Personal_Data_Protection_Act,_2023
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
         - https://github.com/statecheck-security/dpdp-scan
       dpdp_category: age_dob
       dpdpa: ["S.9", "Rule 10"]
