@@ -1,8 +1,10 @@
 # dpdp-scan rule pack. Read these: they are the whole point.
 #
-# Every rule's metadata carries the inventory category, a confidence and the
-# DPDP Act / Rules references the finding engages. The messages are pointers
-# for engineers, not legal advice. Fixtures: tests/semgrep/dpdpa.{py,js}.
+# Every rule's metadata carries the inventory category (dpdp_category), a
+# confidence and the DPDP Act / Rules references the finding engages. The
+# other keys (category, cwe, owasp, likelihood, impact, ...) are the Semgrep
+# Registry's; see README.md in this folder. The messages are pointers for
+# engineers, not legal advice. Fixtures: tests/semgrep/dpdpa.{py,js}.
 #
 # Personal-data field names, shared by the rules below. Matched against the
 # text of the argument (so `user.aadhaar`, `aadhaar_no`, f"{u.phone}" all hit).
@@ -12,7 +14,7 @@
 rules:
   # ---------------------------------------------------------------- logs ---
   - id: pii-in-logs-python
-    message: >
+    message: >-
       Personal data is passed to a log call. Logs are copied, shipped to
       third parties and kept for years; writing identifiers into them works
       against the S.8(5) duty to protect personal data and Rule 6(1)(a),
@@ -21,8 +23,24 @@ rules:
     severity: WARNING
     languages: [python]
     metadata:
-      category: identity
-      confidence: medium
+      category: security
+      subcategory: [audit]
+      cwe:
+        - "CWE-532: Insertion of Sensitive Information into Log File"
+      owasp:
+        - "A09:2021 - Security Logging and Monitoring Failures"
+      vulnerability_class:
+        - Mishandled Sensitive Information
+      likelihood: MEDIUM
+      impact: MEDIUM
+      confidence: MEDIUM
+      technology: [python]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
+        - https://cwe.mitre.org/data/definitions/532.html
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: identity
       dpdpa: ["S.8(5)", "Rule 6(1)(a)"]
       label: personal data in a log call
     patterns:
@@ -46,7 +64,7 @@ rules:
             - pattern-not: '"..."'
 
   - id: pii-in-logs-js
-    message: >
+    message: >-
       Personal data is passed to a log call. Logs are copied, shipped to
       third parties and kept for years; writing identifiers into them works
       against the S.8(5) duty to protect personal data and Rule 6(1)(a),
@@ -55,8 +73,24 @@ rules:
     severity: WARNING
     languages: [javascript, typescript]
     metadata:
-      category: identity
-      confidence: medium
+      category: security
+      subcategory: [audit]
+      cwe:
+        - "CWE-532: Insertion of Sensitive Information into Log File"
+      owasp:
+        - "A09:2021 - Security Logging and Monitoring Failures"
+      vulnerability_class:
+        - Mishandled Sensitive Information
+      likelihood: MEDIUM
+      impact: MEDIUM
+      confidence: MEDIUM
+      technology: [javascript, typescript]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
+        - https://cwe.mitre.org/data/definitions/532.html
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: identity
       dpdpa: ["S.8(5)", "Rule 6(1)(a)"]
       label: personal data in a log call
     patterns:
@@ -76,7 +110,7 @@ rules:
 
   # ----------------------------------------------------------- analytics ---
   - id: pii-to-analytics-python
-    message: >
+    message: >-
       Personal data is sent to an analytics or telemetry SDK. The vendor is a
       Data Processor (S.2(k)) acting for you (S.8(2)), and sharing identifiers
       with it needs a purpose the Data Principal was told about (S.5, S.6).
@@ -84,8 +118,23 @@ rules:
     severity: WARNING
     languages: [python]
     metadata:
-      category: identity
-      confidence: medium
+      category: security
+      subcategory: [audit]
+      cwe:
+        - "CWE-359: Exposure of Private Personal Information to an Unauthorized Actor"
+      owasp:
+        - "A01:2021 - Broken Access Control"
+      vulnerability_class:
+        - Mishandled Sensitive Information
+      likelihood: MEDIUM
+      impact: MEDIUM
+      confidence: MEDIUM
+      technology: [python]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://cwe.mitre.org/data/definitions/359.html
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: identity
       dpdpa: ["S.5", "S.6", "S.8(2)"]
       label: personal data sent to an analytics SDK
     patterns:
@@ -105,7 +154,7 @@ rules:
           regex: (?i).*(aadhaar|aadhar|adhaar|pan_?(no|num|number|card)|passport|voter|epic|dob|date_?of_?birth|birth_?date|email|phone|mobile|mob_?no|msisdn|whatsapp|address|pincode|ifsc|upi|vpa|gstin|account_?(no|num|number)|card_?(no|num|number)|cvv|salary).*
 
   - id: pii-to-analytics-js
-    message: >
+    message: >-
       Personal data is sent to an analytics or telemetry SDK. The vendor is a
       Data Processor (S.2(k)) acting for you (S.8(2)), and sharing identifiers
       with it needs a purpose the Data Principal was told about (S.5, S.6).
@@ -113,8 +162,23 @@ rules:
     severity: WARNING
     languages: [javascript, typescript]
     metadata:
-      category: identity
-      confidence: medium
+      category: security
+      subcategory: [audit]
+      cwe:
+        - "CWE-359: Exposure of Private Personal Information to an Unauthorized Actor"
+      owasp:
+        - "A01:2021 - Broken Access Control"
+      vulnerability_class:
+        - Mishandled Sensitive Information
+      likelihood: MEDIUM
+      impact: MEDIUM
+      confidence: MEDIUM
+      technology: [javascript, typescript]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://cwe.mitre.org/data/definitions/359.html
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: identity
       dpdpa: ["S.5", "S.6", "S.8(2)"]
       label: personal data sent to an analytics SDK
     patterns:
@@ -144,7 +208,7 @@ rules:
 
   # ------------------------------------------------------------ children ---
   - id: dob-without-age-gate-python
-    message: >
+    message: >-
       A date of birth is read from request input, and no age check was found
       in the same function. If any users may be under 18, S.9 requires
       verifiable parental consent before processing a child's data (Rule 10).
@@ -153,8 +217,14 @@ rules:
     severity: INFO
     languages: [python]
     metadata:
-      category: age_dob
-      confidence: low
+      category: best-practice
+      confidence: LOW
+      technology: [python]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: age_dob
       dpdpa: ["S.9", "Rule 10"]
       label: date of birth collected without an age gate nearby
     patterns:
@@ -200,7 +270,7 @@ rules:
             ...
 
   - id: dob-without-age-gate-js
-    message: >
+    message: >-
       A date of birth is read from request input, and no age check was found
       in the same function. If any users may be under 18, S.9 requires
       verifiable parental consent before processing a child's data (Rule 10).
@@ -209,8 +279,14 @@ rules:
     severity: INFO
     languages: [javascript, typescript]
     metadata:
-      category: age_dob
-      confidence: low
+      category: best-practice
+      confidence: LOW
+      technology: [javascript, typescript]
+      references:
+        - https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+        - https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf
+        - https://github.com/statecheck-security/dpdp-scan
+      dpdp_category: age_dob
       dpdpa: ["S.9", "Rule 10"]
       label: date of birth collected without an age gate nearby
     patterns:

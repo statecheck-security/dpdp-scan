@@ -79,8 +79,12 @@ def to_findings(results: list[dict[str, Any]], root_posix: str = "") -> list[Fin
         extra = r.get("extra", {}) if isinstance(r.get("extra"), dict) else {}
         meta = extra.get("metadata", {}) if isinstance(extra.get("metadata"), dict) else {}
         rule_id = str(r.get("check_id", "")).split(".")[-1]
-        category = _CATEGORIES.get(str(meta.get("category", "")), Category.OTHER)
-        confidence = _CONFIDENCES.get(str(meta.get("confidence", "")), Confidence.LOW)
+        # dpdp_category is the inventory category; `category` is the Semgrep
+        # Registry's (security, best-practice), kept as a fallback for older packs.
+        raw_category = meta.get("dpdp_category", meta.get("category", ""))
+        category = _CATEGORIES.get(str(raw_category), Category.OTHER)
+        # The registry spells confidence in capitals (MEDIUM); our enum is lower.
+        confidence = _CONFIDENCES.get(str(meta.get("confidence", "")).lower(), Confidence.LOW)
         provisions = tuple(
             Provision(str(ref), str(meta.get("provision_notes", {}).get(ref, "")))
             for ref in meta.get("dpdpa", [])
