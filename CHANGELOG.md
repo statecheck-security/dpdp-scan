@@ -5,6 +5,15 @@ All notable changes to dpdp-scan. Dates are UTC. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A pre-commit hook (`.pre-commit-hooks.yaml`, id `dpdp-scan`) that scans the files being
+  committed and blocks the commit on a finding at MEDIUM or above.
+- `--files PATH...` scans only the named files; `--staged` scans only the files staged
+  for commit. The usual skips, `ignore.paths` and the baseline still apply.
+  `--write-baseline` is refused in both modes, since a partial baseline would drop every
+  finding outside it.
+
 ### Changed
 
 - The rule pack carries Semgrep Registry metadata: `category`, `subcategory`, `cwe`,

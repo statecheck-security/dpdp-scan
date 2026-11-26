@@ -5,6 +5,10 @@ stdout to JSON, SARIF or Markdown; ``--sarif``, ``--json`` and ``--markdown``
 write those files as well. Nothing printed or written can contain a matched
 value: findings carry masked evidence by construction.
 
+``dpdp-scan --files a.py b.sql`` scans only the named files, and
+``dpdp-scan --staged`` only the files staged for commit; the pre-commit hook in
+``.pre-commit-hooks.yaml`` runs the first.
+
 Exit codes:
 
 - ``0``: the scan completed and no finding is at or above ``--fail-on`` (or
@@ -31,7 +35,7 @@ from dpdp_scan.engine import STEP_FOR, ScanResult, scan_path
 from dpdp_scan.model import Category
 from dpdp_scan.output import build_inventory, build_markdown, build_sarif
 from dpdp_scan.output.inventory import NOT_LEGAL_ADVICE
-from dpdp_scan.walker import WalkOptions
+from dpdp_scan.walker import WalkOptions, relative_to_root, staged_files
 
 EXIT_CLEAN = 0
 EXIT_FINDINGS = 1
@@ -59,10 +63,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
-        "path",
-        nargs="?",
-        default=".",
-        help="repository or directory to scan (default: current directory)",
+        "paths",
+        nargs="*",
+        metavar="PATH",
+        help="repository or directory to scan (default: current directory); "
+        "with --files, the files to scan",
+    )
+    only = parser.add_mutually_exclusive_group()
+    only.add_argument(
+        "--files",
+        action="store_true",
+        help="scan only the PATH arguments, as files relative to the current directory, "
+        "which is also where the config is read from (this is what the pre-commit hook runs)",
+    )
+    only.add_argument(
+        "--staged",
+        action="store_true",
+        help="scan only the files staged for commit under PATH (git diff --cached); "
+        "the working-tree copy is read",
     )
     parser.add_argument(
         "--config",
@@ -170,30 +188,62 @@ def should_fail(result: ScanResult, threshold: Step | None, categories: set[Cate
     return False
 
 
+def _usage_error(message: str) -> int:
+    print(f"dpdp-scan: {message}", file=sys.stderr)
+    return EXIT_ERROR
+
+
+def _file_list(args: argparse.Namespace, root: Path) -> tuple[str, ...] | None:
+    """The explicit file list for --files or --staged, else None (walk the tree).
+    Raises ValueError with a message for the user."""
+    if args.files:
+        try:
+            return tuple(relative_to_root(root, args.paths))
+        except ValueError as exc:
+            raise ValueError(f"--files: {exc} is outside the current directory") from None
+    if args.staged:
+        staged = staged_files(root)
+        if staged is None:
+            raise ValueError(f"--staged: {root} is not in a git work tree")
+        return tuple(staged)
+    return None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    args = build_parser().parse_intermixed_args(argv)
     if args.hash_value is not None:
         print(value_hash(compact_value(args.hash_value)))
         return EXIT_CLEAN
 
-    root = Path(args.path)
+    if args.files:
+        root = Path(".")
+    elif len(args.paths) > 1:
+        return _usage_error("scan one directory at a time, or pass --files for a list of files")
+    else:
+        root = Path(args.paths[0] if args.paths else ".")
+    if args.write_baseline and (args.files or args.staged):
+        return _usage_error(
+            "--write-baseline needs a full scan; a baseline from --files or --staged "
+            "would drop every finding outside them"
+        )
     try:
         if not root.is_dir():
             raise NotADirectoryError(root)
         config: Config = load_config(root, args.config)
         categories = _parse_categories(args.fail_on_category)
+        files = _file_list(args, root)
     except NotADirectoryError as exc:
-        print(f"dpdp-scan: not a directory: {exc}", file=sys.stderr)
-        return EXIT_ERROR
+        return _usage_error(f"not a directory: {exc}")
     except ConfigError as exc:
-        print(f"dpdp-scan: config error: {exc}", file=sys.stderr)
-        return EXIT_ERROR
+        return _usage_error(f"config error: {exc}")
+    except ValueError as exc:
+        return _usage_error(str(exc))
 
     min_step = _STEPS[args.min_confidence]
     assert min_step is not None
     result = scan_path(
         root,
-        walk_options=WalkOptions(use_git=not args.no_git),
+        walk_options=WalkOptions(use_git=not args.no_git, files=files),
         min_step=min_step,
         rules=not args.no_rules,
         config=config,

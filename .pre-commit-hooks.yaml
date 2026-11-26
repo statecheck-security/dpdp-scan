@@ -1,0 +1,20 @@
+# pre-commit hook: https://pre-commit.com
+#
+#   repos:
+#     - repo: https://github.com/statecheck-security/dpdp-scan
+#       rev: v0.2.0
+#       hooks:
+#         - id: dpdp-scan
+#
+# Scans the files being committed and blocks the commit when a finding is at
+# MEDIUM confidence or above. Override with `args:` (replacing the default,
+# so keep --fail-on in it); `args: []` falls back to fail_on in .dpdp-scan.yml.
+# The Semgrep rule pack runs only if Semgrep is installed in the hook's
+# environment: add `additional_dependencies: [semgrep]`.
+- id: dpdp-scan
+  name: dpdp-scan
+  description: Block commits that add Indian personal data (Aadhaar, PAN, GSTIN, UPI, mobile and more).
+  entry: dpdp-scan --files
+  args: [--fail-on, medium]
+  language: python
+  types: [text]

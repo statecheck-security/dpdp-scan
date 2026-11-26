@@ -15,6 +15,10 @@ Rules, in order:
 
 Every yielded path is repo-relative with POSIX separators, and the sequence is
 sorted, so a scan of the same tree is deterministic on every platform.
+
+``WalkOptions.files`` replaces step 1 with an explicit list (``--files`` and
+``--staged``, so a pre-commit hook reads only what is being committed). Steps
+2 to 5 still apply, as do ``ignore.paths``.
 """
 
 from __future__ import annotations
@@ -94,6 +98,9 @@ class WalkOptions:
     use_git: bool = True
     skip_dirs: frozenset[str] = field(default=SKIP_DIRS)
     skip_files: frozenset[str] = field(default=SKIP_FILES)
+    #: Scan exactly these root-relative POSIX paths instead of listing the tree.
+    #: Paths that are missing or not regular files are dropped silently.
+    files: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +127,44 @@ def _git_ls_files(root: Path) -> list[str] | None:
     if proc.returncode != 0:
         return None  # not a work tree, or git refused
     return [p for p in proc.stdout.decode("utf-8", "surrogateescape").split("\0") if p]
+
+
+def staged_files(root: Path) -> list[str] | None:
+    """Files staged for commit under ``root`` (added, copied, modified, renamed),
+    relative to ``root``; None when ``root`` is not in a git work tree."""
+    git = shutil.which("git")
+    if git is None:
+        return None
+    argv = [git, "-C", str(root), "diff", "--cached", "--name-only", "-z", "--relative"]
+    try:
+        proc = subprocess.run(  # noqa: S603  (argv list, fixed executable, no shell)
+            [*argv, "--diff-filter=ACMR"],
+            capture_output=True,
+            check=False,
+            timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    return [p for p in proc.stdout.decode("utf-8", "surrogateescape").split("\0") if p]
+
+
+def relative_to_root(root: Path, paths: list[str]) -> list[str]:
+    """Paths as given on the command line (relative to the current directory, or
+    absolute) made root-relative and POSIX. Raises ValueError for a path outside
+    ``root``."""
+    base = os.path.abspath(root)
+    out: list[str] = []
+    for raw in paths:
+        try:
+            rel = os.path.relpath(os.path.abspath(raw), base)
+        except ValueError:  # another drive on Windows
+            raise ValueError(raw) from None
+        if rel == os.pardir or rel.startswith(os.pardir + os.sep) or os.path.isabs(rel):
+            raise ValueError(raw)
+        out.append(Path(rel).as_posix())
+    return out
 
 
 def _is_skipped_path(relpath: str, opts: WalkOptions) -> bool:
@@ -165,16 +210,24 @@ def walk(root: str | os.PathLike[str], opts: WalkOptions | None = None) -> Itera
     if not root_path.is_dir():
         raise NotADirectoryError(root_path)
 
-    listing = _git_ls_files(root_path) if opts.use_git else None
-    if listing is None:
-        listing = _fallback_listing(root_path, opts)
+    if opts.files is not None:
+        listing = list(opts.files)
+    else:
+        listing = _git_ls_files(root_path) if opts.use_git else None
+        if listing is None:
+            listing = _fallback_listing(root_path, opts)
 
     for rel in sorted(set(listing)):
         if _is_skipped_path(rel, opts):
             continue
+        posix = PurePosixPath(rel)
+        if posix.is_absolute() or ".." in posix.parts:
+            continue  # only an explicit list can carry these; never leave the root
         abspath = root_path / rel
         if abspath.is_symlink() or not abspath.is_file():
             continue  # git lists symlinks and may list deleted-but-tracked files
+        if opts.files is not None and not abspath.resolve().is_relative_to(root_path):
+            continue  # a named file reached through a symlinked directory
         size = abspath.stat().st_size
         if size > opts.max_bytes:
             continue
