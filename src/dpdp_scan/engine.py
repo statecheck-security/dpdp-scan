@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from dpdp_scan.config import Config
@@ -45,13 +45,7 @@ def scan_path(
     dets = tuple(d for d in detectors if config.detector_enabled(d.id))
     opts = walk_options or WalkOptions()
     if config.ignore_paths:
-        opts = WalkOptions(
-            max_bytes=opts.max_bytes,
-            ignore_prefixes=(*opts.ignore_prefixes, *config.ignore_paths),
-            use_git=opts.use_git,
-            skip_dirs=opts.skip_dirs,
-            skip_files=opts.skip_files,
-        )
+        opts = replace(opts, ignore_prefixes=(*opts.ignore_prefixes, *config.ignore_paths))
     schemas = schemas and "schema" not in config.disabled
     rules = rules and "rules" not in config.disabled
 

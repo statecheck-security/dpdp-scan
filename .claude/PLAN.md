@@ -202,8 +202,16 @@ Unchanged from v0.1: masked output, no verdict, inventory labels not legal tiers
 - **Done when:** bytesnapp's TypeScript models and scs's Sanity schemas produce a sensible inventory, recorded in the plan with counts.
 
 #### DS2-2 · Pre-commit and `--files` · ~0.5 d
-- [ ] `--files a b c` scans named paths only; `--staged` uses `git diff --cached --name-only`
-- [ ] `.pre-commit-hooks.yaml`; README section
+- [x] `--files a b c` scans named paths only; `--staged` uses `git diff --cached --name-only` *(2026-11-25, branch `feat/ds2-2-precommit-files`)*
+  - `--files` is a flag: the PATH arguments become files relative to the current directory, which is also where the config is read from. Being a flag, it parses the way pre-commit builds the command (entry, then args, then filenames).
+  - `--staged` runs `git diff --cached --name-only --relative --diff-filter=ACMR` under PATH and reads the working-tree copy.
+  - Both modes keep the walker's skips, `ignore.paths` and the baseline. Paths outside the root are refused (exit 2) or dropped (API).
+  - `--write-baseline` is refused in both modes, because a partial baseline would drop every finding outside it.
+- [x] `.pre-commit-hooks.yaml` (`entry: dpdp-scan --files`, default `args: [--fail-on, medium]`, `types: [text]`); README section; CHANGELOG
+- [x] Done-when check, on a scratch clone of DVDPA, whose own config is `fail_on: none`:
+  - A staged `app/new_customer.py` holding a Verhoeff-valid synthetic Aadhaar: `pre-commit try-repo` gives `Failed`, exit 1, `in_aadhaar ********0936 [high]`.
+  - With only a clean file: `Passed`.
+  - pre-commit 4.7.0. On Windows, `try-repo` fails when the two repos are on different drives (`ValueError: path is on mount`), so run it with both on the same drive.
 - **Done when:** `pre-commit try-repo` on DVDPA blocks a commit that adds a synthetic Aadhaar.
 
 #### DS2-3 · Semgrep registry · ~0.5 d

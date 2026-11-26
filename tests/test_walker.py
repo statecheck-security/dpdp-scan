@@ -4,7 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from dpdp_scan.walker import DEFAULT_MAX_BYTES, WalkOptions, walk
+from dpdp_scan.walker import (
+    DEFAULT_MAX_BYTES,
+    WalkOptions,
+    relative_to_root,
+    staged_files,
+    walk,
+)
 
 GIT = shutil.which("git")
 
@@ -100,3 +106,49 @@ def test_git_walk_falls_back_outside_a_repo(tree: Path) -> None:
     # make this test meaningless rather than wrong).
     got = rels(tree)
     assert "src/app.py" in got
+
+
+def test_explicit_files_still_apply_skips(tree: Path) -> None:
+    files = (
+        "src/app.py",
+        "README.md",
+        "node_modules/left-pad/index.js",  # vendored
+        "package-lock.json",  # lockfile
+        "assets/logo.png",  # binary
+        "big.sql",  # over the size cap
+        "src/deleted.py",  # missing
+        "src",  # a directory, not a file
+    )
+    assert rels(tree, files=files) == ["README.md", "src/app.py"]
+    assert rels(tree, files=files, ignore_prefixes=("src/",)) == ["README.md"]
+    assert rels(tree, files=()) == []
+
+
+def test_explicit_files_never_leave_the_root(tree: Path, tmp_path_factory) -> None:
+    outside = tmp_path_factory.mktemp("outside")
+    _write(outside, "x.py")
+    files = ("../outside/x.py", str(outside / "x.py"), "src/../src/app.py")
+    assert rels(tree, files=files) == []
+
+
+def test_relative_to_root(tree: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tree / "src")
+    assert relative_to_root(tree, ["app.py", "./b.ts", str(tree / "README.md")]) == [
+        "src/app.py",
+        "src/b.ts",
+        "README.md",
+    ]
+    with pytest.raises(ValueError):
+        relative_to_root(tree / "src", ["../README.md"])
+
+
+@pytest.mark.skipif(GIT is None, reason="git not installed")
+def test_staged_files_lists_only_the_index_under_root(tree: Path) -> None:
+    subprocess.run([GIT, "init", "-q", str(tree)], check=True)
+    subprocess.run([GIT, "-C", str(tree), "add", "src/app.py", "README.md"], check=True)
+    assert sorted(staged_files(tree) or []) == ["README.md", "src/app.py"]
+    assert staged_files(tree / "src") == ["app.py"]  # relative to the root asked about
+
+
+def test_staged_files_outside_a_repo_is_none(tmp_path: Path) -> None:
+    assert staged_files(tmp_path) is None

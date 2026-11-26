@@ -109,6 +109,25 @@ steps:
 **Docker.** `docker build -t dpdp-scan .` then
 `docker run --rm -v "$PWD:/repo:ro" dpdp-scan /repo --format sarif > results.sarif`.
 
+**pre-commit.** Blocks a commit that adds personal data, reading only the files being
+committed. Add this to `.pre-commit-config.yaml` (the hook ships from v0.2.0):
+
+```yaml
+repos:
+  - repo: https://github.com/statecheck-security/dpdp-scan
+    rev: v0.2.0
+    hooks:
+      - id: dpdp-scan
+        # args: [--fail-on, high]           # default: --fail-on medium
+        # additional_dependencies: [semgrep]  # also run the rule pack
+```
+
+The hook runs `dpdp-scan --files --fail-on medium <staged files>`. The config, its
+`ignore.paths` and its baseline apply as in a full scan. Overriding `args` replaces the
+default, so keep a `--fail-on` in it; `args: []` uses `fail_on` from `.dpdp-scan.yml`.
+Without pre-commit, `dpdp-scan --staged --fail-on medium` scans what `git diff --cached`
+lists, reading the working-tree copy of each file.
+
 ## Configuration
 
 Put a `.dpdp-scan.yml` in the repository root (or pass `--config FILE`):
